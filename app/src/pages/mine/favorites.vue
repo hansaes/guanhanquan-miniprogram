@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-white" isBack><block slot="content">我的收藏</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>我的收藏</template></cu-custom>
 
     <view class="card" v-for="j in list" :key="j.id" @tap="goDetail(j)">
       <view class="row">
@@ -44,14 +44,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; padding-bottom: 40rpx; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 28rpx; }
+.page { min-height: 100vh; background: var(--canvas); padding-bottom: 40rpx; }
+.card { background: #fff; margin: 24rpx 32rpx; border-radius: 24rpx; padding: 28rpx; }
 .row { display: flex; justify-content: space-between; align-items: center; }
-.title { font-size: 32rpx; font-weight: 600; }
-.salary { color: #e54d42; font-size: 30rpx; font-weight: 700; }
-.unit { font-size: 22rpx; font-weight: 400; }
-.meta { margin-top: 10rpx; font-size: 24rpx; color: #999; }
+.title { font-size: 16px; font-weight: 600; }
+.salary { color: var(--salary); font-size: var(--font-control); font-weight: 700; }
+.unit { font-size: var(--font-caption); font-weight: 400; }
+.meta { margin-top: 10rpx; font-size: var(--font-caption); color: var(--muted); }
 .ops { margin-top: 16rpx; text-align: right; }
-.link { color: #1976d2; font-size: 26rpx; }
-.empty { text-align: center; color: #999; padding: 140rpx 0; font-size: 26rpx; }
+.link { color: var(--primary); font-size: var(--font-small); }
+.empty { text-align: center; color: var(--muted); padding: 140rpx 0; font-size: var(--font-small); }
 </style>

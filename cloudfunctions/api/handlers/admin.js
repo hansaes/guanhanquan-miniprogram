@@ -4,7 +4,14 @@ const L = require('../lib')
 const DAY = 24 * 3600 * 1000
 
 function hashPassword(password, salt) {
-  return crypto.createHash('sha256').update(password + '|' + salt).digest('hex')
+  return 'scrypt:' + crypto.scryptSync(password, salt, 64).toString('hex')
+}
+
+function passwordMatches(password, admin) {
+  const expected = admin.passwordHash || ''
+  const actual = expected.startsWith('scrypt:') ? hashPassword(password, admin.salt)
+    : crypto.createHash('sha256').update(password + '|' + admin.salt).digest('hex')
+  return actual.length === expected.length && crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected))
 }
 
 /** 把云存储 fileID 换成后台浏览器可访问的临时 URL */
@@ -32,7 +39,7 @@ const LOCK_MS = 5 * 60 * 1000
 
 exports.login = async (ctx) => {
   const { username, password } = ctx.data || {}
-  if (!username || !password) return L.fail('请输入账号和密码')
+  if (typeof username !== 'string' || typeof password !== 'string' || !username || !password || username.length > 100 || password.length > 256) return L.fail('请输入有效账号和密码')
 
   const now = Date.now()
   const rec = loginFails.get(username)
@@ -63,12 +70,15 @@ exports.login = async (ctx) => {
     }
   }
 
-  if (hashPassword(password, admin.salt) !== admin.passwordHash) {
+  if (admin.enabled === false || !passwordMatches(password, admin)) {
     recordFail(username, now)
     return L.fail('账号或密码错误')
   }
 
   loginFails.delete(username)
+  if (!admin.passwordHash.startsWith('scrypt:')) {
+    await L.db().collection('admins').doc(admin._id).update({ data: { passwordHash: hashPassword(password, admin.salt) } })
+  }
   const secret = await L.getConfig('adminSecret', process.env.ADMIN_SECRET || 'ghq-admin-secret')
   const token = L.signToken({
     adminId: admin._id,
@@ -452,6 +462,10 @@ exports.handleReport = async (ctx) => {
   const res = await L.db().collection('reports').doc(ctx.params.id).get().catch(() => null)
   if (!res || !res.data) return L.fail('举报记录不存在', 404)
   const report = res.data
+  if (report.reportType === 6) {
+    if ([2, 3].includes(status)) return require('./management').reviewAppeal(ctx)
+    if (![0, 1].includes(report.status)) return L.fail('该申诉已审核，请刷新列表', 409)
+  }
 
   await L.db().collection('reports').doc(ctx.params.id).update({
     data: {

@@ -1,8 +1,8 @@
 <template>
   <view class="detail-container">
     <!-- 自定义导航栏 -->
-	<cu-custom bgColor="bg-gradual-green" isBack>
-	  <block slot="content">{{ pageTitle }}</block>
+	<cu-custom bgColor="bg-white" isBack>
+	  <template #content>{{ pageTitle }}</template>
 	</cu-custom>
     
     <!-- 菜单项 -->
@@ -176,7 +176,7 @@ export default {
 <style lang="scss">
 .detail-container {
   min-height: 100vh;
-  background-color: #F5F5F5;
+  background-color: var(--canvas);
   padding-bottom: 120rpx;
   padding-top: 90rpx;
   
@@ -218,8 +218,8 @@ export default {
     }
     
     .empty-text {
-      font-size: 28rpx;
-      color: #999999;
+      font-size: var(--font-body);
+      color: var(--muted);
     }
   }
   
@@ -242,14 +242,14 @@ export default {
           margin-bottom: 20rpx;
           
           .time-range {
-            color: #666666;
-            font-size: 24rpx;
+            color: var(--muted);
+            font-size: var(--font-caption);
           }
           
           .salary {
-            color: #FF9800;
+            color: var(--salary);
             font-weight: bold;
-            font-size: 32rpx;
+            font-size: 16px;
           }
         }
         
@@ -257,9 +257,9 @@ export default {
           margin-bottom: 20rpx;
           
           .job-title {
-            font-size: 36rpx;
+            font-size: var(--font-title);
             font-weight: bold;
-            color: #333333;
+            color: var(--text);
             margin-bottom: 15rpx;
           }
           
@@ -270,7 +270,7 @@ export default {
             .job-tag {
               background-color: #F2F7FF;
               color: #4169E1;
-              font-size: 24rpx;
+              font-size: var(--font-caption);
               padding: 8rpx 16rpx;
               border-radius: 20rpx;
               margin-right: 16rpx;
@@ -290,14 +290,14 @@ export default {
             
             .label {
               width: 160rpx;
-              color: #999999;
-              font-size: 28rpx;
+              color: var(--muted);
+              font-size: var(--font-body);
             }
             
             .value {
               flex: 1;
-              color: #333333;
-              font-size: 28rpx;
+              color: var(--text);
+              font-size: var(--font-body);
             }
           }
         }
@@ -313,11 +313,11 @@ export default {
           align-items: center;
           justify-content: center;
           height: 100rpx;
-          font-size: 28rpx;
+          font-size: var(--font-body);
           
           &.share {
             border-right: 1rpx solid #EEEEEE;
-            color: #999999;
+            color: var(--muted);
             
             .cuIcon-share {
               margin-right: 10rpx;

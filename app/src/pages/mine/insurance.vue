@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <cu-custom bgColor="bg-white" isBack>
-      <block slot="content">保险</block>
+      <template #content>保险</template>
     </cu-custom>
 
     <view class="tabs">
@@ -17,7 +17,7 @@
         </view>
         <view class="coverage">{{ item.coverage }}</view>
         <view class="intro">{{ item.intro }}</view>
-        <button class="buy" @tap="buy(item)">购买</button>
+        <button role="button" class="buy" @tap="buy(item)">购买</button>
       </view>
       <view v-if="!products.length && !loading" class="empty">暂无可购买的保险</view>
     </view>
@@ -96,16 +96,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; padding-bottom: 40rpx; }
+.page { min-height: 100vh; background: var(--canvas); padding-bottom: 40rpx; }
 .tabs { display: flex; background: #fff; }
-.tab { flex: 1; text-align: center; padding: 26rpx 0; font-size: 28rpx; color: #666; }
-.tab.active { color: #1976d2; font-weight: 600; border-bottom: 4rpx solid #1976d2; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 28rpx; }
+.tab { flex: 1; text-align: center; padding: 26rpx 0; font-size: var(--font-body); color: var(--muted); }
+.tab.active { color: var(--primary); font-weight: 600; border-bottom: 4rpx solid var(--primary); }
+.card { background: #fff; margin: 24rpx 32rpx; border-radius: 24rpx; padding: 28rpx; }
 .item-head { display: flex; justify-content: space-between; align-items: center; }
-.name { font-size: 30rpx; font-weight: 600; }
-.price { color: #e54d42; font-size: 32rpx; font-weight: 700; }
-.coverage { margin-top: 12rpx; font-size: 26rpx; color: #1976d2; }
-.intro { margin-top: 8rpx; font-size: 24rpx; color: #999; }
-.buy { margin-top: 20rpx; background: #1976d2; color: #fff; border-radius: 40rpx; height: 72rpx; line-height: 72rpx; font-size: 28rpx; }
-.empty { text-align: center; color: #999; padding: 120rpx 0; font-size: 26rpx; }
+.name { font-size: var(--font-control); font-weight: 600; }
+.price { color: #e54d42; font-size: 16px; font-weight: 700; }
+.coverage { margin-top: 12rpx; font-size: var(--font-small); color: var(--primary); }
+.intro { margin-top: 8rpx; font-size: var(--font-caption); color: var(--muted); }
+.buy { margin-top: 20rpx; background: var(--primary); color: #fff; border-radius: 40rpx; height: 48px; line-height: 48px; font-size: var(--font-body); }
+.empty { text-align: center; color: var(--muted); padding: 120rpx 0; font-size: var(--font-small); }
 </style>

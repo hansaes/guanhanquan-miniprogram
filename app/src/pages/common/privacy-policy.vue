@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-white" isBack><block slot="content">隐私政策</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>隐私政策</template></cu-custom>
     <view class="doc">
       <view class="h">一、我们收集的信息</view>
       <view class="p">手机号、微信昵称与头像用于账号识别；发布招工信息时填写的联系人、联系电话用于工友与您联系；实名信息仅用于身份核验。</view>
@@ -27,6 +27,6 @@ export default {}
 <style lang="scss" scoped>
 .page { min-height: 100vh; background: #fff; }
 .doc { padding: 32rpx; }
-.h { font-size: 30rpx; font-weight: 600; margin: 28rpx 0 12rpx; }
-.p { font-size: 26rpx; color: #555; line-height: 1.8; }
+.h { font-size: var(--font-control); font-weight: 600; margin: 28rpx 0 12rpx; }
+.p { font-size: var(--font-small); color: #555; line-height: 1.8; }
 </style>

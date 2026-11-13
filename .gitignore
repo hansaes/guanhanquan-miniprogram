@@ -6,11 +6,13 @@ package-lock.json.bak
 app/dist/
 app/unpackage/
 admin/dist/
+admin/.vite/
 cloudfunctions/**/node_modules/
 
 # 本地联调
 .env
 .env.local
+.env.*.local
 *.log
 npm-debug.log*
 
@@ -32,3 +34,6 @@ Thumbs.db
 
 # 个人工具配置
 .claude/
+.playwright-cli/
+server/uploads/
+output/

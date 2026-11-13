@@ -1,7 +1,7 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-gradual-green">
-      <block slot="content">举报信息</block>
+    <cu-custom isBack>
+      <template #content>举报信息</template>
     </cu-custom>
 
     <view class="card">
@@ -14,7 +14,7 @@
 
       <view class="form-row column">
         <text class="label">说明</text>
-        <textarea class="textarea" v-model="reason" maxlength="500"
+        <textarea aria-label="举报说明" class="textarea" v-model="reason" maxlength="500"
           placeholder="写清楚哪一条信息有问题、问题是什么，便于核实" />
       </view>
 
@@ -29,7 +29,7 @@
         </view>
       </view>
 
-      <button class="submit" :loading="submitting" @tap="submit">提交举报</button>
+      <button role="button" class="submit" :loading="submitting" @tap="submit">提交举报</button>
       <view class="notice">举报会通知平台运营人工核实，核实属实会对该信息下架或标记发布者。</view>
     </view>
   </view>
@@ -37,22 +37,26 @@
 
 <script>
 import api from '@/api/index.js'
+import { content, loadContent, dictionary, labelFor } from '@/utils/content'
 
 export default {
   data() {
     return {
       jobId: '',
-      typeNames: ['虚假信息', '重复信息', '违法信息', '骚扰/诈骗', '其他'],
+      content,
       typeIndex: 0,
       reason: '',
       images: [],
       submitting: false
     }
   },
+  computed: { typeNames() { return dictionary('reportTypes').map(x => x.label) } },
   onLoad(options) {
+    loadContent().catch(() => {})
     this.jobId = options.id || ''
   },
   methods: {
+    labelFor,
     onTypeChange(e) {
       this.typeIndex = Number(e.detail.value)
     },
@@ -91,7 +95,7 @@ export default {
         }
         await api.submitReport({
           jobId: this.jobId,
-          reportType: this.typeIndex + 1,
+          reportType: dictionary('reportTypes')[this.typeIndex].value,
           reason: this.reason,
           evidence
         })
@@ -108,18 +112,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 28rpx; }
-.form-row { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid #f5f5f5; }
+.page { min-height: 100vh; background: var(--canvas); }
+.card { background: #fff; margin: 24rpx 32rpx; border-radius: 24rpx; padding: 28rpx; }
+.form-row { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid var(--canvas); }
 .form-row.column { flex-direction: column; align-items: flex-start; }
-.label { width: 140rpx; color: #999; font-size: 28rpx; flex-shrink: 0; }
-.picker { font-size: 28rpx; color: #333; }
-.textarea { width: 100%; height: 200rpx; font-size: 28rpx; margin-top: 12rpx; background: #f7f8fa; border-radius: 12rpx; padding: 20rpx; box-sizing: border-box; }
+.label { width: 140rpx; color: var(--muted); font-size: var(--font-body); flex-shrink: 0; }
+.picker { font-size: var(--font-body); color: var(--text); }
+.textarea { width: 100%; height: 200rpx; font-size: var(--font-body); margin-top: 12rpx; background: #f7f8fa; border-radius: 12rpx; padding: 20rpx; box-sizing: border-box; }
 .images { display: flex; flex-wrap: wrap; margin-top: 12rpx; }
 .img-box { position: relative; width: 160rpx; height: 160rpx; margin: 0 16rpx 16rpx 0; }
 .img-box image { width: 160rpx; height: 160rpx; border-radius: 12rpx; }
-.del { position: absolute; top: -10rpx; right: -10rpx; width: 36rpx; height: 36rpx; line-height: 32rpx; text-align: center; background: rgba(0, 0, 0, 0.6); color: #fff; border-radius: 50%; font-size: 24rpx; }
-.img-add { width: 160rpx; height: 160rpx; border: 2rpx dashed #d9d9d9; border-radius: 12rpx; text-align: center; line-height: 156rpx; font-size: 48rpx; color: #d9d9d9; }
-.submit { margin-top: 28rpx; background: #e54d42; color: #fff; border-radius: 44rpx; height: 84rpx; line-height: 84rpx; font-size: 30rpx; }
-.notice { font-size: 22rpx; color: #999; margin-top: 16rpx; line-height: 1.6; }
+.del { position: absolute; top: -10rpx; right: -10rpx; width: 36rpx; height: 36rpx; line-height: 32rpx; text-align: center; background: rgba(0, 0, 0, 0.6); color: #fff; border-radius: 50%; font-size: var(--font-caption); }
+.img-add { width: 160rpx; height: 160rpx; border: 2rpx dashed #d9d9d9; border-radius: 12rpx; text-align: center; line-height: 156rpx; font-size: var(--font-display); color: #d9d9d9; }
+.submit { margin-top: 28rpx; background: #e54d42; color: #fff; border-radius: 20rpx; height: 48px; line-height: 48px; font-size: var(--font-control); }
+.notice { font-size: var(--font-caption); color: var(--muted); margin-top: 16rpx; line-height: 1.6; }
 </style>

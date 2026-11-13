@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-white" isBack><block slot="content">用户协议</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>用户协议</template></cu-custom>
     <view class="doc">
       <view class="h">一、服务内容</view>
       <view class="p">管焊圈为招工方与工人提供信息发布与浏览服务，平台不参与用工关系，不代收工资。</view>
@@ -27,6 +27,6 @@ export default {}
 <style lang="scss" scoped>
 .page { min-height: 100vh; background: #fff; }
 .doc { padding: 32rpx; }
-.h { font-size: 30rpx; font-weight: 600; margin: 28rpx 0 12rpx; }
-.p { font-size: 26rpx; color: #555; line-height: 1.8; }
+.h { font-size: var(--font-control); font-weight: 600; margin: 28rpx 0 12rpx; }
+.p { font-size: var(--font-small); color: #555; line-height: 1.8; }
 </style>

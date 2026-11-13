@@ -1,69 +1,191 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-gradual-green" isBack><block slot="content">客服中心</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>客服中心</template></cu-custom>
 
-    <view class="card">
+    <page-state v-if="loading || error" :loading="loading" :error="error" @retry="load" />
+    <view class="card" v-else>
       <view class="section-title">常见问题</view>
-      <view class="faq" v-for="(f, i) in faqs" :key="i" @tap="toggle(i)">
-        <view class="q">
-          <text>{{ f.q }}</text>
-          <text class="arrow">{{ open === i ? '−' : '+' }}</text>
-        </view>
-        <view v-if="open === i" class="a">{{ f.a }}</view>
-      </view>
+      <uni-collapse v-model="activeFaq" accordion>
+        <uni-collapse-item
+          v-for="(f, i) in faqs"
+          :key="i"
+          :name="String(i)"
+          :open="activeFaq === String(i)"
+          :title="f.q"
+          :border="i < faqs.length - 1"
+          :show-arrow="false"
+        >
+          <template #title>
+            <button
+              role="button"
+              tabindex="0"
+              class="faq-toggle"
+              :aria-expanded="activeFaq === String(i)"
+              :aria-controls="'faq-answer-' + i"
+              @tap.stop="toggleFaq(i)"
+              @keydown.enter.prevent="toggleFaq(i)"
+              @keydown.space.prevent="toggleFaq(i)"
+            >
+              <text>{{ f.q }}</text>
+              <view
+                class="faq-arrow"
+                :class="{ expanded: activeFaq === String(i) }"
+                aria-hidden="true"
+                ><uni-icons type="bottom" size="16" color="#657287"
+              /></view>
+            </button>
+          </template>
+          <view class="answer" :id="'faq-answer-' + i" :aria-hidden="activeFaq !== String(i)">{{
+            f.a
+          }}</view>
+        </uni-collapse-item>
+      </uni-collapse>
     </view>
 
     <view class="card">
       <view class="section-title">联系我们</view>
-      <button class="item item-btn" open-type="contact">
+      <button role="button" class="item item-btn" open-type="contact">
         <text>在线客服</text><text class="link">微信会话</text>
       </button>
-      <view class="item" @tap="feedback">
-        <text>意见反馈</text><text class="link">提交问题</text>
-      </view>
-      <view class="item" @tap="feedback">
+      <button role="button" class="item item-btn" @tap="feedback">
         <text>意见反馈</text><text class="arrow">›</text>
-      </view>
+      </button>
     </view>
   </view>
 </template>
 
 <script>
+import { content, loadContent } from '@/utils/content'
 export default {
   data() {
     return {
-      open: -1,
-      faqs: [
-        { q: '发布招工收费吗？', a: '发布免费，信息需经平台审核。置顶展示需消耗积分。' },
-        { q: '为什么看不到老板电话？', a: '联系方式默认脱敏，消耗积分后才能查看，用于防止信息被批量抓取。' },
-        { q: '积分怎么获得？', a: '每日签到可得 2 积分，也可在「积分与余额」页充值。' },
-        { q: '信息多久过期？', a: '默认 7 天，到期自动下架；可在个人中心重新发布。' },
-        { q: '黑老板标记为什么查不到？', a: '标记需人工核实，通过后才会对外展示；恶意举报会被封号。' },
-        { q: '遇到欠薪怎么办？', a: '保留聊天记录、考勤与工资凭证，先向当地人社部门投诉，平台可提供举报记录协助。' }
-      ]
+      activeFaq: '',
+      content,
+      error: '',
+      loading: true
     }
   },
+  computed: {
+    faqs() {
+      return this.content.faqs
+    }
+  },
+  onLoad() {
+    this.load()
+  },
   methods: {
-    toggle(i) { this.open = this.open === i ? -1 : i },
-
-    feedback() { uni.navigateTo({ url: '/pages/mine/feedback' }) }
+    toggleFaq(index) {
+      const name = String(index)
+      this.activeFaq = this.activeFaq === name ? '' : name
+    },
+    async load() {
+      this.loading = true
+      this.error = ''
+      try {
+        await loadContent()
+      } catch (e) {
+        this.error = '内容加载失败'
+      } finally {
+        this.loading = false
+      }
+    },
+    feedback() {
+      uni.navigateTo({ url: '/pages/mine/feedback' })
+    }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 28rpx; }
-.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 12rpx; }
-.faq { border-top: 1rpx solid #f5f5f5; padding: 20rpx 0; }
-.faq:first-of-type { border-top: none; }
-.q { display: flex; justify-content: space-between; font-size: 28rpx; color: #333; }
-.arrow { color: #999; }
-.a { margin-top: 12rpx; font-size: 26rpx; color: #888; line-height: 1.7; }
-.item { display: flex; justify-content: space-between; align-items: center; padding: 24rpx 0; border-top: 1rpx solid #f5f5f5; font-size: 28rpx; }
-.item:first-of-type { border-top: none; }
-.link { color: #1976d2; }
-.item-btn { margin: 0; background: #fff; border-radius: 0; text-align: left; line-height: normal; font-size: 28rpx; }
-.item-btn::after { border: none; }
-.arrow { color: #ccc; }
+.page {
+  min-height: 100vh;
+  background: var(--canvas);
+}
+.card {
+  background: #fff;
+  margin: 24rpx 32rpx;
+  border-radius: 24rpx;
+  padding: 28rpx;
+}
+.section-title {
+  font-size: var(--font-control);
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+.card :deep(.uni-collapse-item__title-box) {
+  padding: 0;
+  min-height: 48px;
+}
+.card :deep(.uni-collapse-item__title-text) {
+  font-size: var(--font-body);
+  color: var(--text);
+}
+.card :deep(.uni-collapse-item__wrap-content) {
+  border-color: var(--line);
+}
+.answer {
+  padding: 0 0 16px;
+  font-size: var(--font-body);
+  color: var(--muted);
+  line-height: 1.75;
+}
+.faq-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 0;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  font-size: var(--font-body);
+  line-height: 1.6;
+  color: var(--text);
+}
+.faq-arrow {
+  flex-shrink: 0;
+  display: flex;
+  transition: transform 220ms var(--ease-out);
+}
+.faq-arrow.expanded {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-arrow,
+  .card :deep(.is--transition) {
+    transition: none;
+  }
+}
+.arrow {
+  color: var(--muted);
+}
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-top: 1rpx solid var(--canvas);
+  font-size: var(--font-body);
+}
+.item:first-of-type {
+  border-top: none;
+}
+.link {
+  color: var(--primary);
+}
+.item-btn {
+  margin: 0;
+  min-height: 48px;
+  background: #fff;
+  border-radius: 0;
+  text-align: left;
+  line-height: normal;
+  font-size: var(--font-body);
+}
+.item-btn::after {
+  border: none;
+}
 </style>

@@ -2,7 +2,7 @@
   <view class="feedback-container">
     <!-- 自定义导航栏 -->
     <cu-custom bgColor="bg-white" isBack>
-      <block slot="content">意见反馈</block>
+      <template #content>意见反馈</template>
     </cu-custom>
     
     <!-- 标签页 -->
@@ -26,7 +26,7 @@
         <text class="label">反馈内容</text>
       </view>
       <view class="input-area">
-        <textarea placeholder="请输入..." v-model="content"></textarea>
+        <textarea aria-label="反馈内容" placeholder="请输入..." v-model="content"></textarea>
       </view>
       
       <!-- 图片上传 -->
@@ -41,7 +41,7 @@
       </view>
       
       <!-- 提交按钮 -->
-      <button class="submit-btn" @click="submitFeedback">立即提交</button>
+      <button role="button" class="submit-btn" @click="submitFeedback">立即提交</button>
     </view>
     
     <!-- 反馈记录 -->
@@ -152,7 +152,7 @@ export default {
 <style lang="scss">
 .feedback-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--canvas);
   
   .tabs {
     display: flex;
@@ -163,8 +163,8 @@ export default {
       flex: 1;
       text-align: center;
       padding: 30rpx 0;
-      font-size: 28rpx;
-      color: #666;
+      font-size: var(--font-body);
+      color: var(--muted);
       position: relative;
       
       &.active {
@@ -195,12 +195,12 @@ export default {
       .required {
         color: #f44336;
         margin-right: 10rpx;
-        font-size: 28rpx;
+        font-size: var(--font-body);
       }
       
       .label {
-        font-size: 28rpx;
-        color: #333;
+        font-size: var(--font-body);
+        color: var(--text);
       }
     }
     
@@ -213,7 +213,7 @@ export default {
       textarea {
         width: 100%;
         height: 200rpx;
-        font-size: 28rpx;
+        font-size: var(--font-body);
       }
     }
     
@@ -261,7 +261,7 @@ export default {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 30rpx;
+          font-size: var(--font-control);
         }
       }
     }
@@ -269,7 +269,7 @@ export default {
     .submit-btn {
       background-color: #3D7EFF;
       color: #fff;
-      font-size: 30rpx;
+      font-size: var(--font-control);
       height: 90rpx;
       line-height: 90rpx;
       border-radius: 45rpx;
@@ -293,8 +293,8 @@ export default {
       }
       
       text {
-        font-size: 28rpx;
-        color: #999;
+        font-size: var(--font-body);
+        color: var(--muted);
       }
     }
     
@@ -305,27 +305,27 @@ export default {
       margin-bottom: 20rpx;
       
       .record-time {
-        font-size: 24rpx;
-        color: #999;
+        font-size: var(--font-caption);
+        color: var(--muted);
         margin-bottom: 20rpx;
       }
       
       .record-content {
-        font-size: 28rpx;
-        color: #333;
+        font-size: var(--font-body);
+        color: var(--text);
         line-height: 1.5;
         margin-bottom: 20rpx;
       }
       
       .record-status {
-        font-size: 24rpx;
+        font-size: var(--font-caption);
         
         &.pending {
           color: #FF9800;
         }
         
         &.processed {
-          color: #4CAF50;
+          color: var(--primary);
         }
       }
     }

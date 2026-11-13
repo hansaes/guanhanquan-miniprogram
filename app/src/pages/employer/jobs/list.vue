@@ -1,8 +1,8 @@
 <template>
   <view class="job-list-container">
     <!-- 自定义导航栏 -->
-    <cu-custom bgColor="bg-gradual-green " isBack>
-      <block slot="content">我的招聘</block>
+    <cu-custom bgColor="bg-white" isBack>
+      <template #content>我的招聘</template>
     </cu-custom>
     
     <!-- 状态筛选 -->
@@ -59,14 +59,14 @@
         </view>
         
         <view class="action-bar">
-          <button 
+          <button role="button"
             class="action-btn edit" 
             v-if="job.status === 'pending' || job.status === 'recruiting'"
             @click.stop="editJob(job.id)"
           >
             编辑
           </button>
-          <button 
+          <button role="button"
             class="action-btn applicants" 
             @click.stop="viewApplicants(job.id)"
           >
@@ -80,7 +80,7 @@
     <view class="empty-state" v-else>
       <image src="/static/img/empty-job.png" mode="aspectFit"></image>
       <text>暂无发布职位</text>
-      <button class="publish-btn" @click="publishJob">发布职位</button>
+      <button role="button" class="publish-btn" @click="publishJob">发布职位</button>
     </view>
     
     <!-- 加载更多 -->
@@ -239,7 +239,7 @@ export default {
 <style lang="scss">
 .job-list-container {
   min-height: 100vh;
-  background-color: #F5F5F5;
+  background-color: var(--canvas);
   padding-bottom: 100rpx;
 }
 
@@ -253,14 +253,14 @@ export default {
   
   .filter-item {
     padding: 10rpx 30rpx;
-    font-size: 28rpx;
-    color: #666;
+    font-size: var(--font-body);
+    color: var(--muted);
     border-radius: 30rpx;
     margin-right: 20rpx;
     flex-shrink: 0;
     
     &.active {
-      background-color: #4CAF50;
+      background-color: var(--primary);
       color: #FFFFFF;
     }
   }
@@ -271,7 +271,7 @@ export default {
   
   .job-card {
     background-color: #FFFFFF;
-    border-radius: 16rpx;
+    border-radius: 24rpx;
     padding: 30rpx;
     margin-bottom: 24rpx;
     box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
@@ -283,16 +283,16 @@ export default {
       margin-bottom: 20rpx;
       
       .job-title {
-        font-size: 32rpx;
+        font-size: 16px;
         font-weight: bold;
-        color: #333;
+        color: var(--text);
         flex: 1;
       }
       
       .status-tag {
         padding: 6rpx 20rpx;
         border-radius: 30rpx;
-        font-size: 24rpx;
+        font-size: var(--font-caption);
         flex-shrink: 0;
         margin-left: 20rpx;
         
@@ -303,7 +303,7 @@ export default {
         
         &.status-recruiting {
           background-color: #E8F5E9;
-          color: #4CAF50;
+          color: var(--primary);
         }
         
         &.status-interviewing {
@@ -317,7 +317,7 @@ export default {
         }
         
         &.status-closed {
-          background-color: #F5F5F5;
+          background-color: var(--canvas);
           color: #9E9E9E;
         }
       }
@@ -333,11 +333,11 @@ export default {
         align-items: center;
         margin-right: 30rpx;
         margin-bottom: 10rpx;
-        font-size: 26rpx;
-        color: #666;
+        font-size: var(--font-small);
+        color: var(--muted);
         
         .salary {
-          color: #FF5722;
+          color: var(--salary);
           font-weight: bold;
         }
         
@@ -348,16 +348,16 @@ export default {
     }
     
     .job-info {
-      border-top: 1rpx solid #F5F5F5;
+      border-top: 1rpx solid var(--canvas);
       padding-top: 20rpx;
       
       .info-item {
-        font-size: 26rpx;
-        color: #666;
+        font-size: var(--font-small);
+        color: var(--muted);
         margin-bottom: 10rpx;
         
         .label {
-          color: #999;
+          color: var(--muted);
           margin-right: 10rpx;
         }
       }
@@ -368,16 +368,16 @@ export default {
       justify-content: flex-end;
       margin-top: 20rpx;
       padding-top: 20rpx;
-      border-top: 1rpx solid #F5F5F5;
+      border-top: 1rpx solid var(--canvas);
       
       .action-btn {
-        font-size: 26rpx;
+        font-size: var(--font-small);
         padding: 8rpx 20rpx;
         border-radius: 30rpx;
         margin-left: 20rpx;
         border: none;
-        background-color: #F5F5F5;
-        color: #666;
+        background-color: var(--canvas);
+        color: var(--muted);
         
         &.edit {
           background-color: #FFF3E0;
@@ -406,17 +406,17 @@ export default {
   }
   
   text {
-    font-size: 28rpx;
-    color: #999;
+    font-size: var(--font-body);
+    color: var(--muted);
     margin-bottom: 40rpx;
   }
   
   .publish-btn {
-    background: linear-gradient(to right, #8BC34A, #4CAF50);
+    background: var(--primary);
     color: white;
     border-radius: 50rpx;
     width: 70%;
-    font-size: 30rpx;
+    font-size: var(--font-control);
     height: 80rpx;
     line-height: 80rpx;
   }
@@ -425,15 +425,15 @@ export default {
 .load-more {
   text-align: center;
   padding: 30rpx;
-  color: #999;
-  font-size: 28rpx;
+  color: var(--muted);
+  font-size: var(--font-body);
 }
 
 .publish-fab {
   position: fixed;
   right: 40rpx;
   bottom: 150rpx;
-  background: linear-gradient(to right, #8BC34A, #4CAF50);
+  background: var(--primary);
   color: white;
   border-radius: 50rpx;
   padding: 16rpx 30rpx;
@@ -444,7 +444,7 @@ export default {
   
   text {
     margin-left: 8rpx;
-    font-size: 28rpx;
+    font-size: var(--font-body);
   }
 }
 </style>

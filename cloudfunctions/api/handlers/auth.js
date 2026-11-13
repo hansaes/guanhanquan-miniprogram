@@ -28,6 +28,19 @@ const publicUser = (u) => ({
 
 exports.publicUser = publicUser
 
+function profileError(data, isHttp) {
+  if (data.nickname !== undefined &&
+    (typeof data.nickname !== 'string' || !data.nickname.trim() || data.nickname.trim().length > 20)) {
+    return '昵称需为 1–20 个字'
+  }
+  if (data.avatar !== undefined) {
+    if (typeof data.avatar !== 'string' || data.avatar.length > 2048) return '头像格式无效'
+    const allowed = isHttp ? /^ghq:\/\/[0-9a-f-]{36}$/ : /^(cloud:\/\/|https:\/\/)/
+    if (data.avatar && !allowed.test(data.avatar)) return '请重新选择并上传头像'
+  }
+  return ''
+}
+
 exports.login = async (ctx) => {
   const user = await L.ensureUser(ctx.openid)
   if (user.status === 1) return L.fail('账号已被封禁', 403)
@@ -36,10 +49,12 @@ exports.login = async (ctx) => {
 }
 
 exports.register = async (ctx) => {
+  const error = profileError(ctx.data, ctx.isHttp)
+  if (error) return L.fail(error)
   const { nickname, avatar, userType } = ctx.data
   const user = await L.ensureUser(ctx.openid)
   const patch = { updatedAt: Date.now(), lastLoginAt: Date.now() }
-  if (nickname) patch.nickname = String(nickname).slice(0, 20)
+  if (nickname) patch.nickname = nickname.trim()
   if (avatar) patch.avatar = avatar
   if (userType === 'employer' || userType === 'worker') patch.userType = userType
   await L.db().collection('users').doc(user._id).update({ data: patch })
@@ -58,7 +73,7 @@ exports.bindPhone = async (ctx) => {
     const res = await ctx.cloud.openapi.phonenumber.getPhoneNumber({ code })
     phone = res.phoneInfo && res.phoneInfo.purePhoneNumber
   } catch (e) {
-    return L.fail('手机号解析失败：' + e.message)
+    return L.fail('手机号解析失败：' + e.message, e.statusCode || 400)
   }
   if (!phone) return L.fail('未获取到手机号')
   await L.db().collection('users').doc(ctx.user._id).update({ data: { phone, updatedAt: Date.now() } })
@@ -72,11 +87,14 @@ exports.profile = async (ctx) => {
 }
 
 exports.updateProfile = async (ctx) => {
+  const error = profileError(ctx.data, ctx.isHttp)
+  if (error) return L.fail(error)
   const allow = ['nickname', 'avatar', 'gender', 'age', 'city', 'intro', 'showPhone']
   const patch = { updatedAt: Date.now() }
   allow.forEach((k) => {
     if (ctx.data[k] !== undefined) patch[k] = ctx.data[k]
   })
+  if (patch.nickname !== undefined) patch.nickname = patch.nickname.trim()
   if (patch.showPhone !== undefined) patch.showPhone = !!patch.showPhone
   await L.db().collection('users').doc(ctx.user._id).update({ data: patch })
   return L.ok(publicUser(Object.assign(ctx.user, patch)))
@@ -87,11 +105,16 @@ exports.employerProfile = async (ctx) => {
   return L.ok({
     id: ctx.user._id,
     contactName: enterprise.contactName || ctx.user.nickname || '',
-    contactPhone: ctx.user.phone || '',
+    contactPhone: enterprise.contactPhone || ctx.user.phone || '',
     companyName: enterprise.companyName || '',
     creditCode: enterprise.creditCode || '',
     license: enterprise.license || '',
     address: enterprise.address || '',
+    region: enterprise.region || '',
+    addressDetail: enterprise.addressDetail || '',
+    scale: enterprise.scale || '',
+    description: enterprise.description || '',
+    logo: enterprise.logo || '',
     enterpriseStatus: statusOf(!!ctx.user.enterpriseVerified, ctx.user.enterpriseStatus),
     enterpriseVerified: !!ctx.user.enterpriseVerified,
     rejectReason: ctx.user.enterpriseRejectReason || '',
@@ -103,12 +126,19 @@ exports.employerProfile = async (ctx) => {
 
 exports.updateEmployerProfile = async (ctx) => {
   const d = ctx.data || {}
+  if (d.contactPhone && !/^1\d{10}$/.test(String(d.contactPhone))) return L.fail('请填写正确的联系电话')
   const enterprise = {
     companyName: d.companyName || '',
     creditCode: d.creditCode || '',
     license: d.license || '',
     address: d.address || '',
-    contactName: d.contactName || ''
+    contactName: d.contactName || '',
+    contactPhone: String(d.contactPhone || ctx.user.phone || '').slice(0, 11),
+    region: String(d.region || '').slice(0, 100),
+    addressDetail: String(d.addressDetail || '').slice(0, 200),
+    scale: String(d.scale || '').slice(0, 40),
+    description: String(d.description || '').slice(0, 200),
+    logo: String(d.logo || '').slice(0, 1000)
   }
   await L.db().collection('users').doc(ctx.user._id).update({
     data: {

@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <cu-custom bgColor="bg-white" isBack>
-      <block slot="content">工人简历</block>
+      <template #content>工人简历</template>
     </cu-custom>
 
     <view v-if="worker" class="content">
@@ -51,7 +51,7 @@
     <view v-if="!worker && !loading" class="empty-page">简历不存在或已关闭</view>
 
     <view class="bottom-bar" v-if="worker">
-      <button class="primary" @tap="contactWorker">联系 TA</button>
+      <button role="button" class="primary" @tap="contactWorker">联系 TA</button>
     </view>
   </view>
 </template>
@@ -102,29 +102,29 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; padding-bottom: 140rpx; }
+.page { min-height: 100vh; background: var(--canvas); padding-bottom: 140rpx; }
 .content { padding: 20rpx; }
-.card { background: #fff; border-radius: 16rpx; padding: 28rpx; margin-bottom: 20rpx; }
+.card { background: #fff; border-radius: 24rpx; padding: 28rpx; margin-bottom: 20rpx; }
 .head { display: flex; align-items: center; }
 .avatar { width: 120rpx; height: 120rpx; border-radius: 50%; margin-right: 24rpx; }
 .name-row { display: flex; align-items: center; }
-.name { font-size: 36rpx; font-weight: 600; }
-.verified { margin-left: 12rpx; font-size: 22rpx; color: #52c41a; border: 1rpx solid #52c41a; border-radius: 4rpx; padding: 0 8rpx; }
-.sub { display: block; margin-top: 8rpx; font-size: 24rpx; color: #999; }
-.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; }
+.name { font-size: var(--font-title); font-weight: 600; }
+.verified { margin-left: 12rpx; font-size: var(--font-caption); color: #52c41a; border: 1rpx solid #52c41a; border-radius: 4rpx; padding: 0 8rpx; }
+.sub { display: block; margin-top: 8rpx; font-size: var(--font-caption); color: var(--muted); }
+.section-title { font-size: var(--font-control); font-weight: 600; margin-bottom: 16rpx; }
 .tags { display: flex; flex-wrap: wrap; margin-bottom: 12rpx; }
-.tag { background: #eaf3ff; color: #1976d2; font-size: 24rpx; padding: 6rpx 16rpx; border-radius: 8rpx; margin: 0 12rpx 12rpx 0; }
-.row { display: flex; padding: 12rpx 0; font-size: 28rpx; }
-.label { width: 140rpx; color: #999; flex-shrink: 0; }
-.value { color: #333; flex: 1; }
-.value.phone { color: #1976d2; font-weight: 600; }
+.tag { background: #eaf3ff; color: var(--primary); font-size: var(--font-caption); padding: 6rpx 16rpx; border-radius: 8rpx; margin: 0 12rpx 12rpx 0; }
+.row { display: flex; padding: 12rpx 0; font-size: var(--font-body); }
+.label { width: 140rpx; color: var(--muted); flex-shrink: 0; }
+.value { color: var(--text); flex: 1; }
+.value.phone { color: var(--primary); font-weight: 600; }
 .review { border-top: 1rpx solid #f0f0f0; padding-top: 16rpx; margin-top: 16rpx; }
 .review-head { display: flex; justify-content: space-between; margin-bottom: 8rpx; }
-.reviewer { font-size: 26rpx; color: #333; }
-.rating { font-size: 24rpx; color: #fa8c16; }
-.review-content { font-size: 26rpx; color: #666; line-height: 1.6; }
-.empty { text-align: center; color: #999; font-size: 26rpx; }
-.empty-page { text-align: center; color: #999; padding: 160rpx 0; }
-.bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; padding: 16rpx 24rpx calc(16rpx + constant(safe-area-inset-bottom)); }
-.primary { background: #1976d2; color: #fff; border-radius: 44rpx; height: 84rpx; line-height: 84rpx; font-size: 30rpx; }
+.reviewer { font-size: var(--font-small); color: var(--text); }
+.rating { font-size: var(--font-caption); color: #fa8c16; }
+.review-content { font-size: var(--font-small); color: var(--muted); line-height: 1.6; }
+.empty { text-align: center; color: var(--muted); font-size: var(--font-small); }
+.empty-page { text-align: center; color: var(--muted); padding: 160rpx 0; }
+.bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom)); }
+.primary { background: var(--primary); color: #fff; border-radius: 20rpx; height: 48px; line-height: 48px; font-size: var(--font-control); }
 </style>

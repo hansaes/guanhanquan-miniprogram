@@ -1,206 +1,196 @@
 <template>
-  <view class="mine-container">
-    <!-- 自定义导航栏 -->
-    <nav-bar title="员工个人中心"></nav-bar>
-    
-    <!-- 用户信息卡片 -->
-    <view class="user-card">
-      <view class="user-info">
-        <image class="avatar" :src="userInfo && userInfo.avatar || '/static/img/default-avatar.png'" mode="aspectFill"></image>
-        <view class="info">
-          <view class="name">{{displayName}}</view>
-          <view class="tag" v-if="certification">{{certification}}</view>
-        </view>
-        <view class="login-btn" v-if="!isLoggedIn" @click="login">登录/注册</view>
-      </view>
-      
-      <!-- 钱包信息 -->
-      <view class="wallet-info" v-if="isLoggedIn">
-        <view class="wallet-item">
-          <text class="amount">¥{{walletInfo.balance}}</text>
-          <text class="label">余额</text>
-        </view>
-        <view class="divider"></view>
-        <view class="wallet-item">
-          <text class="amount">{{walletInfo.points}}</text>
-          <text class="label">积分</text>
-        </view>
-      </view>
-      
-      <!-- 未登录提示 -->
-      <view class="wallet-info not-login" v-else>
-        <text class="login-tips">登录后查看您的资产信息</text>
-      </view>
-    </view>
-    
-    <!-- 统计卡片 -->
-    <view class="stats-card" v-if="isLoggedIn">
-      <view class="stat-item" @click="checkLogin('/pages/mine/myApplications')">
-        <view class="count">{{statsInfo.applicationCount}}</view>
-        <view class="label">我的申请</view>
-      </view>
-      <view class="stat-item" @click="checkLogin('/pages/mine/favorites')">
-        <view class="count">{{statsInfo.favoriteCount}}</view>
-        <view class="label">我的收藏</view>
-      </view>
-      <view class="stat-item" @click="checkLogin('/pages/mine/certification')">
-        <view class="count">{{statsInfo.certificationCount}}</view>
-        <view class="label">技能认证</view>
-      </view>
-    </view>
-    
-    <!-- 功能列表 -->
-    <view class="menu-card">
-      <view class="menu-group">
-        <view class="menu-title">我的服务</view>
-        <view class="menu-list">
-          <view class="menu-item" @click="checkLogin('/pages/mine/myApplications')">
-            <view class="icon">
-              <uni-icons type="paperplane" size="22" color="#4CAF50"></uni-icons>
-            </view>
-            <view class="text">我的申请</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
+  <view class="ui-page ui-tab-page mine-container">
+    <view v-if="isLoggedIn" class="profile-cover" :style="{ paddingTop: StatusBar + 36 + 'px' }">
+      <button
+        class="settings"
+        :style="{ top: StatusBar + 12 + 'px' }"
+        role="button"
+        aria-label="设置"
+        @tap="navigateTo('/pages/mine/settings')"
+      >
+        <uni-icons type="gear-filled" size="25" color="#fff" />
+      </button>
+      <view class="profile-row">
+        <button
+          class="profile-avatar"
+          role="button"
+          aria-label="编辑个人头像和昵称"
+          @tap="navigateTo('/pages/mine/profile')"
+        >
+          <image v-if="localUser && localUser.avatar" :src="localUser.avatar" mode="aspectFill" />
+          <uni-icons v-else type="person-filled" size="46" color="#fff" />
+        </button>
+        <view class="profile-info">
+          <button class="profile-name" role="button" @tap="navigateTo('/pages/mine/profile')">
+            {{ displayName }}
+          </button>
+          <view v-if="isLoggedIn" class="profile-badges">
+            <text v-if="localUser?.id" class="id-badge">ID: {{ localUser.id.slice(-6) }}</text>
+            <text v-if="certification" class="verified-badge">{{ certification }}</text>
           </view>
-          <view class="menu-item" @click="checkLogin('/pages/mine/favorites')">
-            <view class="icon">
-              <uni-icons type="star" size="22" color="#FF9800"></uni-icons>
-            </view>
-            <view class="text">我的收藏</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/resume/my')">
-            <view class="icon">
-              <uni-icons type="person" size="22" color="#1976D2"></uni-icons>
-            </view>
-            <view class="text">我的求职</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/wallet/index')">
-            <view class="icon">
-              <uni-icons type="wallet" size="22" color="#FF9800"></uni-icons>
-            </view>
-            <view class="text">积分与余额</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/blacklist/query')">
-            <view class="icon">
-              <uni-icons type="search" size="22" color="#E54D42"></uni-icons>
-            </view>
-            <view class="text">黑老板查询</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/service/index')">
-            <view class="icon">
-              <uni-icons type="headphones" size="22" color="#4CAF50"></uni-icons>
-            </view>
-            <view class="text">客服中心</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/mine/certification')">
-            <view class="icon">
-              <uni-icons type="medal" size="22" color="#4CAF50"></uni-icons>
-            </view>
-            <view class="text">技能认证</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/mine/insurance')">
-            <view class="icon">
-              <uni-icons type="safety" size="22" color="#4CAF50"></uni-icons>
-            </view>
-            <view class="text">保险</view>
-            <view class="badge" v-if="userInfo && userInfo.hasInsurance">已购买</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-        </view>
-      </view>
-      
-      <view class="menu-group">
-        <view class="menu-title">培训服务</view>
-        <view class="menu-list">
-          <view class="menu-item" @click="checkLogin('/pages/training/training')">
-            <view class="icon">
-              <uni-icons type="videocam" size="22" color="#FF5722"></uni-icons>
-            </view>
-            <view class="text">在线培训</view>
-            <view class="badge" v-if="userInfo && userInfo.hasNewCourse">NEW</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="checkLogin('/pages/mine/certification')">
-            <view class="icon">
-              <uni-icons type="vip" size="22" color="#9C27B0"></uni-icons>
-            </view>
-            <view class="text">我的证书</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-        </view>
-      </view>
-      
-      <view class="menu-group">
-        <view class="menu-title">其他</view>
-        <view class="menu-list">
-          <view class="menu-item" @click="navigateTo('/pages/message/index')">
-            <view class="icon">
-              <uni-icons type="notification" size="22" color="#FF9800"></uni-icons>
-            </view>
-            <view class="text">消息通知</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="switchToEmployer">
-            <view class="icon">
-              <uni-icons type="staff" size="22" color="#1976D2"></uni-icons>
-            </view>
-            <view class="text">切换到招工方</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="navigateTo('/pages/mine/feedback')">
-            <view class="icon">
-              <uni-icons type="help" size="22" color="#607D8B"></uni-icons>
-            </view>
-            <view class="text">意见反馈</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
-          <view class="menu-item" @click="navigateTo('/pages/mine/settings')">
-            <view class="icon">
-              <uni-icons type="gear" size="22" color="#607D8B"></uni-icons>
-            </view>
-            <view class="text">设置</view>
-            <uni-icons type="right" size="16" color="#CCCCCC"></uni-icons>
-          </view>
+          <button role="button" v-else class="login" @tap="login">登录 / 注册</button>
         </view>
       </view>
     </view>
-    
-    <!-- 退出登录按钮 -->
-    <view class="logout-btn" v-if="isLoggedIn" @click="handleLogout">退出登录</view>
-    
-    <!-- 身份切换按钮 -->
-    <identity-switch></identity-switch>
+    <cu-custom v-else><template #content>我的</template></cu-custom>
+    <auth-gate title="登录后管理个人信息" target="/pages/mine/mine" @ready="loadAccount">
+      <view class="mine-body">
+        <view class="wallet-card">
+          <button class="wallet-item" role="button" @tap="checkLogin('/pages/wallet/index')">
+            <text class="wallet-number">
+              {{ isLoggedIn && walletReady && !walletError ? walletInfo.points : '—' }}
+            </text>
+            <text>我的积分</text>
+          </button>
+          <view class="wallet-divider" />
+          <button class="wallet-item" role="button" @tap="checkLogin('/pages/wallet/index')">
+            <text class="wallet-number">
+              {{
+                isLoggedIn && walletReady && !walletError
+                  ? '¥ ' + Number(walletInfo.balance).toFixed(2)
+                  : '—'
+              }}
+            </text>
+            <text>钱包余额</text>
+          </button>
+          <button
+            class="wallet-button"
+            role="button"
+            :disabled="walletLoading"
+            @tap="walletError ? loadWallet() : checkLogin('/pages/wallet/index')"
+          >
+            {{ walletError ? '重试' : '充值' }}
+          </button>
+        </view>
+        <view class="ui-card quick-services">
+          <button
+            role="button"
+            hover-class="shortcut-pressed"
+            :hover-start-time="0"
+            :hover-stay-time="120"
+            @tap="checkLogin('/pages/employer/jobManage')"
+          >
+            <view class="quick-icon tone-blue">
+              <uni-icons type="staff-filled" size="26" color="#2563eb" />
+            </view>
+            <text>我的招工</text>
+          </button>
+          <button
+            role="button"
+            hover-class="shortcut-pressed"
+            :hover-start-time="0"
+            :hover-stay-time="120"
+            @tap="checkLogin('/pages/resume/my')"
+          >
+            <view class="quick-icon tone-orange">
+              <uni-icons type="contact-filled" size="26" color="#ed670d" />
+            </view>
+            <text>我的简历</text>
+          </button>
+          <button
+            role="button"
+            hover-class="shortcut-pressed"
+            :hover-start-time="0"
+            :hover-stay-time="120"
+            @tap="checkLogin('/pages/mine/favorites')"
+          >
+            <view class="quick-icon favorite">
+              <uni-icons type="heart-filled" size="26" color="#e74853" />
+            </view>
+            <text>我的收藏</text>
+          </button>
+        </view>
+        <view class="ui-card services">
+          <text class="menu-heading">常用服务</text>
+          <button
+            v-for="item in content.services"
+            :key="item.value"
+            class="service-row"
+            role="button"
+            :aria-label="item.label"
+            hover-class="service-pressed"
+            :hover-start-time="0"
+            :hover-stay-time="120"
+            @tap="checkLogin(item.path)"
+          >
+            <uni-icons :type="item.icon" size="23" :color="tones[item.tone]" />
+            <text class="service-label">{{ item.label }}</text>
+            <text v-if="item.value === 'realname' && certification" class="verified-status">
+              已认证
+            </text>
+            <uni-icons type="right" size="16" color="#bdc4ce" />
+          </button>
+        </view>
+        <view class="ui-card services">
+          <button
+            class="service-row"
+            role="button"
+            hover-class="service-pressed"
+            @tap="navigateTo('/pages/mine/feedback')"
+          >
+            <uni-icons type="help-filled" size="23" color="#929baa" />
+            <text class="service-label">意见反馈</text>
+            <uni-icons type="right" size="16" color="#bdc4ce" />
+          </button>
+          <button
+            class="service-row"
+            role="button"
+            hover-class="service-pressed"
+            @tap="switchToEmployer"
+          >
+            <uni-icons type="staff" size="23" color="#929baa" />
+            <text class="service-label">招工管理</text>
+            <uni-icons type="right" size="16" color="#bdc4ce" />
+          </button>
+          <button
+            class="service-row"
+            role="button"
+            hover-class="service-pressed"
+            @tap="navigateTo('/pages/mine/settings')"
+          >
+            <uni-icons type="gear" size="23" color="#929baa" />
+            <text class="service-label">设置</text>
+            <uni-icons type="right" size="16" color="#bdc4ce" />
+          </button>
+        </view>
+        <button v-if="isLoggedIn" class="logout-btn" role="button" @tap="handleLogout">
+          退出当前登录
+        </button>
+      </view>
+    </auth-gate>
+    <app-tabbar :current="2" />
   </view>
 </template>
-
 <script>
 import { mapState, mapMutations } from 'vuex'
-import IdentitySwitch from '@/components/identity-switch.vue'
+import { content, loadContent } from '@/utils/content'
+import { navigate } from '@/utils/navigation'
 import api from '@/api/index.js'
-import { getUser, setUser, clearAuth } from '@/utils/auth'
+import { getUser, setUser, clearAuth, session, goLogin } from '@/utils/auth'
 
 export default {
-  components: {
-    IdentitySwitch
-  },
   data() {
     return {
+      content,
+      session,
+      walletError: false,
+      walletReady: false,
+      walletLoading: false,
+      walletOwner: '',
+      tones: { blue: '#2563eb', green: '#16a05a', orange: '#ed670d', purple: '#9250dc' },
       stats: { applicationCount: 0, favoriteCount: 0, certificationCount: 0 },
       localUser: null,
-      wallet: { points: 0, balance: 0 },
+      wallet: { points: 0, balance: 0 }
     }
   },
   computed: {
     ...mapState(['userType', 'userInfo']),
-    isLoggedIn() { return !!this.localUser },
+    isLoggedIn() {
+      return !!this.session.userInfo?.id
+    },
     // 计算用户显示名称
     displayName() {
-      return this.localUser ? (this.localUser.nickname || '工友') : '未登录'
+      return this.localUser ? this.localUser.nickname || '工友' : '未登录'
     },
     // 计算用户认证状态
     certification() {
@@ -216,21 +206,36 @@ export default {
     }
   },
   onShow() {
-    const cached = getUser()
-    this.localUser = cached && cached.id ? cached : null
-    if (this.localUser && this.$store) this.$store.commit('setUserInfo', this.localUser)
-    this.refreshProfile()
-    this.loadWallet()
-    this.loadStats()
+    uni.hideTabBar({ animation: false })
+    loadContent().catch(() => {})
+    if (this.localUser && session.authReady && session.userInfo) this.loadAccount()
   },
   methods: {
+    loadAccount() {
+      this.localUser = getUser()
+      if (this.walletOwner !== this.localUser?.id) {
+        this.walletOwner = this.localUser?.id || ''
+        this.walletReady = false
+      }
+      this.refreshProfile()
+      this.loadWallet()
+    },
     async loadWallet() {
-      if (!this.localUser) return
+      if (!this.localUser || this.walletLoading) return
+      this.walletLoading = true
+      const owner = this.localUser.id
       try {
         const res = await api.getWallet()
+        if (owner !== session.userInfo?.id) return
         const d = res.data || {}
+        this.walletError = false
         this.wallet = { points: d.points || 0, balance: d.balance || 0 }
-      } catch (e) {}
+        this.walletReady = true
+      } catch (e) {
+        if (owner === session.userInfo?.id) this.walletError = true
+      } finally {
+        this.walletLoading = false
+      }
     },
     async loadStats() {
       if (!this.isLoggedIn) return
@@ -249,13 +254,15 @@ export default {
     ...mapMutations(['setUserInfo', 'setUserType']),
     async refreshProfile() {
       if (!this.localUser) return
+      const owner = this.localUser.id
       try {
         const res = await api.getUserProfile()
+        if (owner !== session.userInfo?.id) return
         this.localUser = res.data
         this.setUserInfo(res.data)
         setUser(res.data)
       } catch (e) {
-        if (e && e.code === 403) {
+        if (owner === session.userInfo?.id && e && e.code === 403) {
           clearAuth()
           this.localUser = null
         }
@@ -266,17 +273,7 @@ export default {
       if (this.isLoggedIn) {
         this.navigateTo(url)
       } else {
-        uni.showModal({
-          title: '提示',
-          content: '请先登录',
-          confirmText: '去登录',
-          cancelText: '取消',
-          success: (res) => {
-            if (res.confirm) {
-              this.login()
-            }
-          }
-        })
+        goLogin(url)
       }
     },
     // 退出登录
@@ -294,33 +291,31 @@ export default {
               title: '已退出登录',
               icon: 'success'
             })
-            uni.reLaunch({ url: '/pages/login/login' })
+            uni.reLaunch({ url: '/pages/index/index' })
           }
         }
       })
     },
     // 跳转到登录页
     login() {
-      uni.navigateTo({
-        url: '/pages/login/login'
-      })
+      goLogin('/pages/mine/mine')
     },
     switchToEmployer() {
       uni.navigateTo({ url: '/pages/employer/index' })
     },
     // 页面跳转
     navigateTo(url) {
-      uni.navigateTo({ url })
+      navigate(url)
     },
     // 底部导航
     navTo(page) {
       const routes = {
-        'index': '/pages/index/index',
-        'task': '/pages/jobSearch/jobSearch',
-        'message': '/pages/message/index',
-        'my': '/pages/mine/mine'
+        index: '/pages/index/index',
+        task: '/pages/jobSearch/jobSearch',
+        message: '/pages/message/index',
+        my: '/pages/mine/mine'
       }
-      
+
       if (routes[page] && page !== 'my') {
         uni.switchTab({
           url: routes[page]
@@ -330,205 +325,220 @@ export default {
   }
 }
 </script>
-
-<style lang="scss">
-.mine-container {
-  min-height: 100vh;
-  background-color: #F5F5F5;
-  padding-bottom: 120rpx;
-  
-  .user-card {
-    background: linear-gradient(to right, #4CAF50, #2E7D32);
-    padding: 30rpx;
-    border-radius: 0 0 20rpx 20rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-    
-    .user-info {
-      display: flex;
-      align-items: center;
-      margin-bottom: 30rpx;
-      
-      .avatar {
-        width: 120rpx;
-        height: 120rpx;
-        border-radius: 50%;
-        background-color: #FFFFFF;
-        margin-right: 20rpx;
-        border: 4rpx solid rgba(255, 255, 255, 0.5);
-      }
-      
-      .info {
-        flex: 1;
-        
-        .name {
-          font-size: 34rpx;
-          color: #FFFFFF;
-          font-weight: bold;
-          margin-bottom: 10rpx;
-        }
-        
-        .tag {
-          display: inline-block;
-          font-size: 24rpx;
-          color: #4CAF50;
-          background-color: #FFFFFF;
-          padding: 6rpx 20rpx;
-          border-radius: 30rpx;
-        }
-      }
-      
-      .login-btn {
-        padding: 10rpx 30rpx;
-        background-color: rgba(255, 255, 255, 0.2);
-        color: #FFFFFF;
-        border-radius: 30rpx;
-        font-size: 28rpx;
-      }
-    }
-    
-    .wallet-info {
-      display: flex;
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 16rpx;
-      padding: 20rpx 0;
-      
-      &.not-login {
-        justify-content: center;
-        padding: 30rpx 0;
-        
-        .login-tips {
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 28rpx;
-        }
-      }
-      
-      .wallet-item {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        
-        .amount {
-          font-size: 32rpx;
-          color: #FFFFFF;
-          font-weight: bold;
-          margin-bottom: 8rpx;
-        }
-        
-        .label {
-          font-size: 24rpx;
-          color: rgba(255, 255, 255, 0.8);
-        }
-      }
-      
-      .divider {
-        width: 1rpx;
-        height: 50rpx;
-        background-color: rgba(255, 255, 255, 0.2);
-      }
-    }
+<style scoped>
+.profile-cover {
+  position: relative;
+  background: #2563eb;
+  color: #fff;
+  padding: 60rpx 44rpx 110rpx;
+}
+.profile-row {
+  display: flex;
+  gap: 28rpx;
+  align-items: center;
+  padding-right: 24px;
+}
+.profile-avatar {
+  padding: 0;
+  margin: 0;
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: 50%;
+  border: 7rpx solid rgba(255, 255, 255, 0.25);
+  background: #4b80ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.profile-avatar image {
+  width: 100%;
+  height: 100%;
+}
+.profile-info {
+  min-width: 0;
+}
+.profile-name {
+  font-size: 26px;
+  font-weight: 650;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.profile-badges {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+.id-badge,
+.verified-badge {
+  border-radius: 8rpx;
+  padding: 6rpx 14rpx;
+  font-size: var(--font-caption);
+  background: rgba(255, 255, 255, 0.2);
+}
+.verified-badge {
+  background: #ff963b;
+}
+.settings {
+  position: absolute;
+  right: 34rpx;
+  padding: 8rpx;
+  background: transparent;
+  line-height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+.login {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.17);
+  margin-top: 16rpx;
+  padding: 0 24rpx;
+  font-size: var(--font-small);
+  line-height: 64rpx;
+}
+.mine-body {
+  padding: 0 32rpx;
+}
+.wallet-card {
+  position: relative;
+  margin-top: -64rpx;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  align-items: center;
+  gap: 24rpx;
+  background: #fff;
+  padding: 40rpx 30rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 36rpx rgba(35, 63, 106, 0.06);
+  margin-bottom: 28rpx;
+}
+.wallet-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 12rpx;
+  font-size: var(--font-small);
+  color: var(--muted);
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: 1.5;
+}
+.wallet-number {
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.wallet-divider {
+  width: 1rpx;
+  height: 80rpx;
+  background: var(--line);
+}
+.wallet-button {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-radius: 16rpx;
+  font-size: var(--font-small);
+  line-height: 44px;
+  min-height: 44px;
+  padding: 0 28rpx;
+}
+.quick-services {
+  display: flex;
+  justify-content: space-around;
+  padding: 30rpx 16rpx;
+}
+.quick-services button {
+  background: transparent;
+  margin: 0;
+  padding: 8rpx;
+  font-size: var(--font-small);
+  line-height: 1.6;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.quick-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+  transition: transform 160ms var(--ease-out);
+}
+.shortcut-pressed .quick-icon {
+  transform: scale(0.92);
+}
+.service-pressed {
+  background: var(--primary-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-icon {
+    transition: none;
   }
-  
-  .stats-card {
-    display: flex;
-    background-color: #FFFFFF;
-    border-radius: 16rpx;
-    margin: -20rpx 20rpx 20rpx;
-    padding: 30rpx 0;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-    position: relative;
-    z-index: 10;
-    
-    .stat-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      
-      .count {
-        font-size: 36rpx;
-        color: #333333;
-        font-weight: bold;
-        margin-bottom: 10rpx;
-      }
-      
-      .label {
-        font-size: 26rpx;
-        color: #999999;
-      }
-    }
-  }
-  
-  .menu-card {
-    background-color: #FFFFFF;
-    padding: 0 30rpx;
-    
-    .menu-group {
-      padding: 30rpx 0;
-      border-bottom: 1rpx solid #EEEEEE;
-      
-      &:last-child {
-        border-bottom: none;
-      }
-      
-      .menu-title {
-        font-size: 30rpx;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 20rpx;
-      }
-      
-      .menu-list {
-        .menu-item {
-          display: flex;
-          align-items: center;
-          padding: 24rpx 0;
-          
-          .icon {
-            width: 44rpx;
-            height: 44rpx;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 20rpx;
-          }
-          
-          .text {
-            flex: 1;
-            font-size: 28rpx;
-            color: #333;
-          }
-          
-          .badge {
-            font-size: 22rpx;
-            color: #FFFFFF;
-            background-color: #FF5722;
-            padding: 4rpx 10rpx;
-            border-radius: 20rpx;
-            margin-right: 20rpx;
-          }
-        }
-      }
-    }
-  }
-  
-  .logout-btn {
-    margin: 40rpx 30rpx;
-    background-color: #FFFFFF;
-    height: 90rpx;
-    line-height: 90rpx;
-    text-align: center;
-    border-radius: 45rpx;
-    color: #FF5722;
-    font-size: 30rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  }
-  
-  .shadow-warp {
-    position: relative;
-    box-shadow: 0 10rpx 20rpx rgba(0, 0, 0, 0.05);
-    border: 2rpx solid rgba(0, 0, 0, 0.03);
+  .shortcut-pressed .quick-icon {
+    transform: none;
   }
 }
-</style> 
+.favorite {
+  background: #fff0f2;
+}
+.services {
+  padding: 8rpx 32rpx;
+}
+.menu-heading {
+  display: block;
+  padding: 24rpx 0 8rpx;
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--muted);
+}
+.service-row {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  padding: 26rpx 0;
+  min-height: 104rpx;
+  border-bottom: 1rpx solid var(--line);
+  margin: 0;
+  border-radius: 0;
+  background: #fff;
+  font-size: var(--font-control);
+  line-height: 1.5;
+  text-align: left;
+}
+.service-row:last-child {
+  border: 0;
+}
+.service-label {
+  flex: 1;
+  color: var(--ink);
+}
+.verified-status {
+  color: #16a05a;
+  font-size: var(--font-small);
+}
+.logout-btn {
+  color: #e5484d;
+  background: transparent;
+  font-size: var(--font-body);
+  margin-top: 32rpx;
+}
+</style>

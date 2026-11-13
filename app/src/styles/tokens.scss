@@ -1,0 +1,242 @@
+/* 管焊圈全局设计令牌；规范见 docs/UI设计规范.md。 */
+page {
+  --primary: #2563eb;
+  --primary-soft: #edf4ff;
+  --salary: #ed5b0b;
+  --success: #19a55a;
+  --danger: #e5484d;
+  --ink: #182131;
+  --text: #3f4b5d;
+  --muted: #657287;
+  --canvas: #f7f8fa;
+  --line: #edf0f4;
+  --radius: 24rpx;
+  --font-caption: 12px;
+  --font-small: 13px;
+  --font-body: 14px;
+  --font-control: 15px;
+  --font-heading: 18px;
+  --font-title: 20px;
+  --font-display: 24px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-card: 0 4px 20px rgba(24, 45, 82, 0.035);
+  --tabbar-height: 69px;
+  --primary-color: var(--primary);
+  background: var(--canvas);
+  color: var(--ink);
+}
+view,
+button,
+input,
+textarea {
+  box-sizing: border-box;
+}
+button {
+  font-family: inherit;
+  transition:
+    opacity 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+button::after {
+  border: 0;
+}
+/* #ifdef H5 */
+uni-page-body uni-button::after {
+  border: 0;
+}
+button:focus-visible,
+[role='button']:focus-visible,
+[role='radio']:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px var(--primary);
+}
+@media (min-width: 600px) {
+  uni-page-body {
+    max-width: 560px;
+    min-height: 100vh;
+    margin: 0 auto;
+    box-shadow: 0 0 64px rgba(24, 45, 82, 0.05);
+  }
+  uni-page-body .cu-custom .cu-bar.fixed,
+  uni-page-body .ui-page .app-tabbar,
+  uni-page-body .detail .bottom-bar,
+  uni-page-body .publish:not(.publish-tab) .submit-bar {
+    left: 50%;
+    right: auto;
+    width: 560px;
+    transform: translateX(-50%);
+  }
+}
+/* #endif */
+button[disabled] {
+  opacity: 0.5;
+}
+.button-hover {
+  opacity: 0.72;
+}
+.ui-page {
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+}
+.ui-tab-page {
+  padding-bottom: calc(var(--tabbar-height) + 16px + env(safe-area-inset-bottom));
+}
+.ui-body {
+  padding: 28rpx 32rpx;
+}
+.picker-trigger {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  text-align: left;
+  line-height: 1.5;
+  background: transparent;
+}
+.ui-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-card);
+}
+.ui-title {
+  font-size: var(--font-heading);
+  font-weight: 650;
+  color: var(--ink);
+}
+.ui-button {
+  background: var(--primary);
+  color: #fff;
+  min-height: 48px;
+  line-height: 48px;
+  padding: 0 32rpx;
+  font-size: var(--font-control);
+  font-weight: 600;
+  border-radius: 20rpx;
+  transition:
+    opacity 160ms ease,
+    transform 160ms var(--ease-out),
+    background-color 160ms ease;
+}
+.ui-button.button-hover {
+  opacity: 0.9;
+  transform: scale(0.985);
+}
+.ui-button-ghost {
+  background: #fff;
+  color: var(--primary);
+  border: 2rpx solid var(--primary);
+}
+.ui-tag {
+  display: inline-flex;
+  padding: 6rpx 14rpx;
+  font-size: var(--font-caption);
+  border-radius: 8rpx;
+  background: #f1f3f6;
+  color: #626d7d;
+  line-height: 1.5;
+}
+.ui-tag.blue {
+  color: #2563eb;
+  background: #eaf2ff;
+}
+.ui-tag.orange {
+  color: #d95a08;
+  background: #fff0da;
+}
+.ui-tag.green {
+  color: #168c4e;
+  background: #ecfbf2;
+}
+.tone-blue {
+  color: #2563eb;
+  background: #eaf2ff;
+}
+.tone-green {
+  color: #16a05a;
+  background: #e6f9ed;
+}
+.tone-orange {
+  color: #ed670d;
+  background: #fff2e4;
+}
+.tone-purple {
+  color: #9250dc;
+  background: #f3ebff;
+}
+.ui-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28rpx;
+}
+.ui-text-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8rpx 0 8rpx 20rpx;
+  min-height: 44px;
+  min-width: 44px;
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--font-body);
+  line-height: 1.5;
+  margin: -16rpx 0;
+}
+.ui-end {
+  padding: 32rpx;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--font-caption);
+}
+.ui-avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: #edf3ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-title);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.ui-avatar image {
+  width: 100%;
+  height: 100%;
+}
+.ui-enter {
+  animation: enter 240ms var(--ease-out) both;
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8rpx);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-enter {
+    animation: none;
+  }
+  button {
+    transition: none;
+  }
+  .ui-button.button-hover {
+    transform: none;
+  }
+}

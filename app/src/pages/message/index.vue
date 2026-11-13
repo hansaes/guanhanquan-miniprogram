@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-white" isBack><block slot="content">消息通知</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>消息通知</template></cu-custom>
 
     <view class="card announce" v-for="a in announcements" :key="a.id">
       <view class="head">
@@ -75,16 +75,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; }
-.bar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 30rpx; font-size: 26rpx; color: #666; }
-.link { color: #1976d2; }
-.card { background: #fff; margin: 0 20rpx 20rpx; border-radius: 16rpx; padding: 28rpx; }
+.page { min-height: 100vh; background: var(--canvas); }
+.bar { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 30rpx; font-size: var(--font-small); color: var(--muted); }
+.link { color: var(--primary); }
+.card { background: #fff; margin: 0 32rpx 24rpx; border-radius: 24rpx; padding: 28rpx; }
 .head { display: flex; align-items: center; }
-.title { font-size: 30rpx; font-weight: 600; }
+.title { font-size: var(--font-control); font-weight: 600; }
 .dot { width: 12rpx; height: 12rpx; background: #e54d42; border-radius: 50%; margin-left: 12rpx; }
-.pin { font-size: 20rpx; color: #fa8c16; border: 1rpx solid #fa8c16; border-radius: 6rpx; padding: 2rpx 8rpx; margin-left: 12rpx; }
-.announce { border-left: 6rpx solid #1976d2; }
-.content { margin-top: 10rpx; font-size: 26rpx; color: #666; line-height: 1.6; }
-.time { margin-top: 12rpx; font-size: 22rpx; color: #bbb; }
-.empty { text-align: center; color: #999; padding: 140rpx 0; font-size: 26rpx; }
+.pin { font-size: var(--font-caption); color: #fa8c16; border: 1rpx solid #fa8c16; border-radius: 6rpx; padding: 2rpx 8rpx; margin-left: 12rpx; }
+.announce { border-left: 6rpx solid var(--primary); }
+.content { margin-top: 10rpx; font-size: var(--font-small); color: var(--muted); line-height: 1.6; }
+.time { margin-top: 12rpx; font-size: var(--font-caption); color: #bbb; }
+.empty { text-align: center; color: var(--muted); padding: 140rpx 0; font-size: var(--font-small); }
 </style>

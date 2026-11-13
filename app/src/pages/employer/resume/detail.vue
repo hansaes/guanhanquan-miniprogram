@@ -1,19 +1,8 @@
 <template>
   <view class="container">
     <!-- 自定义导航栏 -->
-    <view class="cu-custom">
-      <view class="cu-bar fixed bg-gradual-green" style="height:90rpx;">
-        <view class="action" @tap="goBack">
-          <text class="cuIcon-back text-white"></text>
-          <text class="text-white">返回</text>
-        </view>
-        <view class="content text-white">零工简历</view>
-        <view class="action">
-          <text class="cuIcon-share text-white" @tap="shareResume"></text>
-        </view>
-      </view>
-    </view>
-    
+    <cu-custom isBack><template #content>简历详情</template></cu-custom>
+
     <!-- 加载状态 -->
     <view class="loading-container" v-if="loading">
       <view class="cu-load loading"></view>
@@ -252,7 +241,7 @@ export default {
 <style lang="scss">
 .container {
   min-height: 100vh;
-  background-color: #F5F5F5;
+  background-color: var(--canvas);
   padding-bottom: 120rpx;
   padding-top: 90rpx;
 }
@@ -295,14 +284,14 @@ export default {
       flex: 1;
       
       .user-name {
-        font-size: 36rpx;
+        font-size: var(--font-title);
         font-weight: bold;
-        color: #333333;
+        color: var(--text);
       }
       
       .user-basic {
-        font-size: 28rpx;
-        color: #666666;
+        font-size: var(--font-body);
+        color: var(--muted);
         margin-top: 10rpx;
       }
       
@@ -319,8 +308,8 @@ export default {
           padding: 4rpx 12rpx;
           background-color: rgba(0,0,0,0.03);
           border-radius: 8rpx;
-          font-size: 24rpx;
-          color: #666666;
+          font-size: var(--font-caption);
+          color: var(--muted);
           
           text {
             &:first-child {
@@ -340,7 +329,7 @@ export default {
         height: 120rpx;
         border-radius: 50%;
         background-color: #FFFFFF;
-        border: 4rpx solid #F5F5F5;
+        border: 4rpx solid var(--canvas);
       }
       
       .gender-tag {
@@ -364,7 +353,7 @@ export default {
         
         .cuIcon-female, .cuIcon-male {
           color: #FFFFFF;
-          font-size: 24rpx;
+          font-size: var(--font-caption);
         }
       }
     }
@@ -374,14 +363,14 @@ export default {
     margin: 20rpx 0;
     
     .rate {
-      font-size: 36rpx;
+      font-size: var(--font-title);
       font-weight: bold;
       color: #FF5722;
     }
     
     .unit {
-      font-size: 24rpx;
-      color: #999;
+      font-size: var(--font-caption);
+      color: var(--muted);
       margin-left: 4rpx;
     }
   }
@@ -394,8 +383,8 @@ export default {
     .tag-item {
       padding: 6rpx 20rpx;
       background-color: #F0F8FF;
-      color: #1976D2;
-      font-size: 24rpx;
+      color: var(--primary);
+      font-size: var(--font-caption);
       border-radius: 30rpx;
       margin-right: 20rpx;
       margin-bottom: 10rpx;
@@ -413,7 +402,7 @@ export default {
     padding: 30rpx;
     
     &:not(:last-child) {
-      border-bottom: 1rpx solid #F5F5F5;
+      border-bottom: 1rpx solid var(--canvas);
     }
     
     .section-header {
@@ -429,16 +418,16 @@ export default {
       }
       
       .section-title {
-        font-size: 30rpx;
+        font-size: var(--font-control);
         font-weight: bold;
-        color: #333333;
+        color: var(--text);
       }
     }
     
     .section-content {
       padding-left: 26rpx;
-      font-size: 28rpx;
-      color: #666666;
+      font-size: var(--font-body);
+      color: var(--muted);
       line-height: 1.5;
     }
   }
@@ -459,17 +448,17 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28rpx;
+    font-size: var(--font-body);
     
     &.collect {
       background-color: #FFFFFF;
-      color: #999999;
+      color: var(--muted);
       width: 25%;
       flex-direction: column;
-      font-size: 24rpx;
+      font-size: var(--font-caption);
       
       .cuIcon-favor, .cuIcon-favorfill {
-        font-size: 36rpx;
+        font-size: var(--font-title);
         margin-bottom: 6rpx;
       }
       
@@ -498,12 +487,12 @@ export default {
   margin-bottom: 10rpx;
   
   .label {
-    color: #666;
+    color: var(--muted);
     margin-right: 20rpx;
   }
   
   .text-green {
-    color: #4CAF50;
+    color: var(--primary);
   }
   
   .text-blue {
@@ -522,15 +511,15 @@ export default {
     padding: 20rpx 0;
     
     .num {
-      font-size: 32rpx;
+      font-size: 16px;
       font-weight: bold;
-      color: #333;
+      color: var(--text);
       display: block;
     }
     
     .label {
-      font-size: 24rpx;
-      color: #666;
+      font-size: var(--font-caption);
+      color: var(--muted);
       margin-top: 10rpx;
       display: block;
     }

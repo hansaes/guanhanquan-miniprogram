@@ -39,3 +39,7 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
+
+## UI 与运营内容
+
+修改页面、组件、样式或运营标签前，先阅读 [UI设计规范](docs/UI设计规范.md)。复用现有 uni-ui / ColorUI / Element Plus 和共享组件；语义令牌维护在 `app/src/styles/tokens.scss`。运营内容由云函数 `content.js` 与管理后台维护，前端通过 `utils/content.js` 读取；禁止在页面中复制字典默认值或用选项数组位置作为业务值。

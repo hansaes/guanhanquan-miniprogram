@@ -1,0 +1,21 @@
+{
+  "name": "guanhanquan-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "管焊圈 PostgreSQL API",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.cjs",
+    "dev": "node --env-file-if-exists=.env --watch index.cjs",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.cjs",
+    "test": "node --test --test-concurrency=1 test/*.test.cjs"
+  },
+  "dependencies": {
+    "@fastify/autoload": "^6.3.1",
+    "@fastify/cors": "^11.4.2",
+    "@fastify/multipart": "^10.1.8",
+    "@fastify/rate-limit": "^11.2.2",
+    "fastify": "^5.12.8",
+    "pg": "^8.23.1"
+  }
+}

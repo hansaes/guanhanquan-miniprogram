@@ -130,7 +130,9 @@ exports.insurances = async () => {
 exports.buyInsurance = async (ctx) => {
   const res = await L.db().collection('insurances').doc(ctx.params.id).get().catch(() => null)
   if (!res || !res.data) return L.fail('保险产品不存在', 404)
+  if (res.data.enabled !== true) return L.fail('保险产品已下架', 409)
   const price = Number(res.data.price || 0)
+  if (!Number.isFinite(price) || price < 0 || price > 1000000 || Math.abs(price * 100 - Math.round(price * 100)) > 0.000001) return L.fail('保险价格配置不合法', 409)
   const upd = await L.db().collection('users')
     .where({ _id: ctx.user._id, balance: L.cmd().gte(price) })
     .update({ data: { balance: L.cmd().inc(-price) } })
@@ -167,6 +169,9 @@ exports.trainingDetail = async (ctx) => {
 exports.enrollTraining = async (ctx) => {
   const res = await L.db().collection('trainings').doc(ctx.params.id).get().catch(() => null)
   if (!res || !res.data) return L.fail('课程不存在', 404)
+  if (res.data.enabled !== true) return L.fail('课程已下架', 409)
+  const existing = await L.db().collection('training_enrolls').where({ openid: ctx.openid, trainingId: ctx.params.id }).limit(1).get()
+  if (existing.data.length) return L.ok({ id: existing.data[0]._id, enrolled: true })
   const add = await L.db().collection('training_enrolls').add({
     data: { openid: ctx.openid, trainingId: ctx.params.id, createdAt: Date.now() }
   })

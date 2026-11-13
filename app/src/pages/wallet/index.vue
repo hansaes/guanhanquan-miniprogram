@@ -1,88 +1,158 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-gradual-green" isBack><block slot="content">积分与余额</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>积分与余额</template></cu-custom>
 
-    <view class="balance-card">
-      <view class="item">
-        <text class="num">{{ info.points }}</text>
-        <text class="label">积分</text>
-      </view>
-      <view class="divider"></view>
-      <view class="item">
-        <text class="num">{{ info.balance }}</text>
-        <text class="label">余额（元）</text>
-      </view>
-    </view>
-
-    <view class="actions">
-      <button class="sign" :disabled="info.signedToday" @tap="signIn">
-        {{ info.signedToday ? '今日已签到' : '签到 +' + info.signInPoints + ' 积分' }}
-      </button>
-      <button class="recharge" @tap="recharge">充值</button>
-      <button class="recharge blacklist" @tap="goBlacklist">查黑老板</button>
-    </view>
-
-    <view class="card" v-if="err"><text class="err">加载失败：{{ err }}</text></view>
-
-    <view class="card rules">
-      <view class="section-title">消耗说明</view>
-      <view class="rule"><text>查看联系方式</text><text class="cost">{{ info.contactCost }} 积分 / 次</text></view>
-      <view class="rule"><text>信息置顶 7 天</text><text class="cost">{{ info.topCost }} 积分 / 次</text></view>
-      <view class="rule"><text>刷新排序</text><text class="cost">{{ info.refreshCost }} 积分 / 次</text></view>
-      <view class="rule" @tap="goResume"><text>任务：完善简历（一次性）</text><text class="cost">{{ info.profileTaskRewarded ? '已领取' : '+' + info.profileTaskPoints + ' 积分' }}</text></view>
-    </view>
-
-    <view class="card">
-      <view class="section-title">收支记录</view>
-      <view v-for="r in records" :key="r.id" class="record">
-        <view>
-          <text class="biz">{{ r.businessType || '其他' }}</text>
-          <text class="remark">{{ r.remark }}</text>
+    <auth-gate title="登录后查看账户" target="/pages/wallet/index" @ready="load">
+      <view class="balance-card" :aria-busy="loading">
+        <view class="item">
+          <text class="num">{{ info ? info.points : '—' }}</text>
+          <text class="label">积分</text>
         </view>
-        <text :class="r.amount > 0 ? 'plus' : 'minus'">{{ r.amount > 0 ? '+' : '' }}{{ r.amount }}</text>
+        <view class="divider"></view>
+        <view class="item">
+          <text class="num">{{ info ? Number(info.balance).toFixed(2) : '—' }}</text>
+          <text class="label">余额（元）</text>
+        </view>
       </view>
-      <view v-if="!records.length" class="empty">暂无记录</view>
-    </view>
+
+      <view class="actions">
+        <button
+          role="button"
+          class="sign"
+          :loading="signing"
+          :disabled="!info || loading || signing || info.signedToday"
+          @tap="signIn"
+        >
+          {{
+            !info
+              ? '签到'
+              : info.signedToday
+                ? '今日已签到'
+                : '签到 +' + info.signInPoints + ' 积分'
+          }}
+        </button>
+        <button role="button" class="recharge" :disabled="!info || loading" @tap="recharge">
+          充值
+        </button>
+      </view>
+
+      <page-state
+        v-if="err || (!info && loading)"
+        :loading="loading && !info"
+        :error="err"
+        @retry="load"
+      />
+
+      <view class="card rules" v-if="info">
+        <view class="section-title">消耗说明</view>
+        <view class="rule"
+          ><text>查看联系方式</text><text class="cost">{{ info.contactCost }} 积分 / 次</text></view
+        >
+        <view class="rule"
+          ><text>信息置顶 7 天</text><text class="cost">{{ info.topCost }} 积分 / 次</text></view
+        >
+        <view class="rule"
+          ><text>刷新排序</text><text class="cost">{{ info.refreshCost }} 积分 / 次</text></view
+        >
+        <button role="button" class="rule task" @tap="goResume">
+          <text>首次完善简历</text>
+          <view class="reward">
+            <text>{{
+              info.profileTaskRewarded ? '已领取' : '+' + info.profileTaskPoints + ' 积分'
+            }}</text>
+            <uni-icons type="right" size="14" color="#657287" />
+          </view>
+        </button>
+        <button role="button" class="rule task" @tap="goBlacklist">
+          <text>信用查询</text><uni-icons type="right" size="14" color="#657287" />
+        </button>
+      </view>
+
+      <view class="card">
+        <view class="section-title">收支记录</view>
+        <page-state
+          v-if="recordsLoading || recordsError"
+          :loading="recordsLoading"
+          :error="recordsError"
+          @retry="load"
+        />
+        <view v-for="r in records" v-else :key="r.id" class="record">
+          <view>
+            <text class="biz">{{ r.businessType || '其他' }}</text>
+            <text class="remark">{{ r.remark }}</text>
+          </view>
+          <text :class="r.amount > 0 ? 'plus' : 'minus'"
+            >{{ r.amount > 0 ? '+' : '' }}{{ r.amount }}</text
+          >
+        </view>
+        <view v-if="!recordsLoading && !recordsError && !records.length" class="empty"
+          >暂无记录</view
+        >
+      </view>
+    </auth-gate>
   </view>
 </template>
 
 <script>
 import api from '@/api/index.js'
+import { session } from '@/utils/auth'
 export default {
   data() {
     return {
       err: '',
-      info: { points: 0, balance: 0, signedToday: false, contactCost: 5, topCost: 30, refreshCost: 5, signInPoints: 2, profileTaskPoints: 5, profileTaskRewarded: false },
+      info: null,
+      loading: true,
+      recordsLoading: true,
+      recordsError: '',
+      signing: false,
+      requestId: 0,
+      walletOwner: '',
       records: []
     }
   },
-  onLoad() { this.load() },
   methods: {
     async load() {
+      const owner = session.userInfo?.id
+      if (!owner) return
+      if (this.walletOwner !== owner) {
+        this.info = null
+        this.records = []
+        this.walletOwner = owner
+      }
+      const requestId = ++this.requestId
+      this.loading = true
+      this.recordsLoading = true
       this.err = ''
-      try {
-        const w = await api.getWallet()
-        this.info = w.data || this.info
-      } catch (e) {
-        this.err = '账户信息：' + (e && (e.message || e.errMsg)) || '未知'
-      }
-      try {
-        const r = await api.getWalletRecords({ page: 1, pageSize: 30 })
-        this.records = (r.data && r.data.records) || []
-      } catch (e2) {
-        this.err = (this.err ? this.err + '；' : '') + '流水：' + (e2 && (e2.message || e2.errMsg)) || '未知'
-      }
+      this.recordsError = ''
+      const [wallet, records] = await Promise.allSettled([
+        api.getWallet(),
+        api.getWalletRecords({ page: 1, pageSize: 30 })
+      ])
+      if (requestId !== this.requestId || owner !== session.userInfo?.id) return
+      if (wallet.status === 'fulfilled') this.info = wallet.value.data
+      else this.err = '账户加载失败，请重试'
+      if (records.status === 'fulfilled') this.records = records.value.data?.records || []
+      else this.recordsError = '收支记录加载失败，请重试'
+      this.loading = false
+      this.recordsLoading = false
     },
 
     async signIn() {
-      if (this.info.signedToday) return
+      if (!this.info || this.info.signedToday || this.signing) return
+      const owner = session.userInfo?.id
+      this.signing = true
       try {
         const res = await api.signIn()
+        if (owner !== session.userInfo?.id) return
         this.info.signedToday = true
-        this.info.points = res.data.points
         uni.showToast({ title: '+' + res.data.points + ' 积分', icon: 'success' })
-        this.load()
-      } catch (e) {}
+        await this.load()
+      } catch (e) {
+        if (owner === session.userInfo?.id)
+          uni.showToast({ title: '签到失败，请重试', icon: 'none' })
+      } finally {
+        this.signing = false
+      }
     },
     goBlacklist() {
       uni.navigateTo({ url: '/pages/blacklist/query' })
@@ -126,26 +196,144 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; padding-bottom: 40rpx; }
-.balance-card { background: linear-gradient(135deg, #1b4b7a, #2a6aa8); display: flex; padding: 40rpx 0; }
-.item { flex: 1; text-align: center; color: #fff; }
-.num { font-size: 48rpx; font-weight: 700; display: block; }
-.label { font-size: 24rpx; opacity: .8; }
-.divider { width: 1rpx; background: rgba(255,255,255,.25); }
-.actions { display: flex; padding: 24rpx; }
-.sign { flex: 1; background: #ff8a00; color: #fff; border-radius: 44rpx; height: 80rpx; line-height: 80rpx; font-size: 28rpx; margin-right: 16rpx; }
-.sign[disabled] { background: #d9d9d9; }
-.recharge { width: 180rpx; background: #fff; color: #1976d2; border-radius: 44rpx; height: 80rpx; line-height: 80rpx; font-size: 28rpx; }
-.recharge.blacklist { margin-left: 16rpx; color: #e54d42; }
-.card { background: #fff; margin: 0 20rpx 20rpx; border-radius: 16rpx; padding: 28rpx; }
-.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; }
-.rule { display: flex; justify-content: space-between; padding: 12rpx 0; font-size: 28rpx; color: #666; }
-.cost { color: #e54d42; }
-.record { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; border-bottom: 1rpx solid #f5f5f5; }
-.biz { font-size: 28rpx; display: block; }
-.remark { font-size: 22rpx; color: #999; }
-.plus { color: #52c41a; font-size: 30rpx; }
-.minus { color: #e54d42; font-size: 30rpx; }
-.err { color: #e54d42; font-size: 26rpx; }
-.empty { text-align: center; color: #999; font-size: 26rpx; padding: 30rpx 0; }
+.page {
+  min-height: 100vh;
+  background: var(--canvas);
+  padding-bottom: 40rpx;
+}
+.balance-card {
+  background: var(--primary);
+  margin: 24rpx 32rpx 0;
+  border-radius: 28rpx;
+  display: flex;
+  padding: 40rpx 0;
+}
+.item {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  text-align: center;
+  color: #fff;
+}
+.num {
+  font-size: var(--font-display);
+  font-weight: 700;
+  display: block;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.label {
+  font-size: var(--font-caption);
+  opacity: 0.8;
+}
+.divider {
+  width: 1rpx;
+  background: rgba(255, 255, 255, 0.25);
+}
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 24rpx 32rpx;
+}
+.sign,
+.recharge {
+  margin: 0;
+  min-width: 0;
+  border-radius: 20rpx;
+  min-height: 48px;
+  line-height: 48px;
+  font-size: var(--font-control);
+  padding: 0 8px;
+}
+.sign {
+  background: var(--primary);
+  color: #fff;
+}
+.sign[disabled] {
+  background: var(--primary-soft);
+  color: var(--muted);
+  opacity: 1;
+}
+.recharge {
+  background: #fff;
+  color: var(--primary);
+  border: 1px solid var(--line);
+}
+.card {
+  background: #fff;
+  margin: 0 32rpx 24rpx;
+  border-radius: 24rpx;
+  padding: 28rpx;
+}
+.section-title {
+  font-size: var(--font-control);
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+.rule {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  font-size: var(--font-body);
+  color: var(--text);
+  line-height: 1.5;
+}
+.cost {
+  color: var(--text);
+  flex-shrink: 0;
+}
+.task {
+  margin: 0;
+  min-height: 48px;
+  background: transparent;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  text-align: left;
+}
+.reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+}
+.record {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.record:last-child {
+  border-bottom: 0;
+}
+.biz {
+  font-size: var(--font-body);
+  display: block;
+}
+.remark {
+  font-size: var(--font-caption);
+  color: var(--muted);
+}
+.plus {
+  color: #16864b;
+  font-size: var(--font-control);
+}
+.minus {
+  color: #e54d42;
+  font-size: var(--font-control);
+}
+.err {
+  color: #e54d42;
+  font-size: var(--font-small);
+}
+.empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--font-small);
+  padding: 30rpx 0;
+}
 </style>

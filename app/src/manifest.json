@@ -70,13 +70,12 @@
         },
         "publicPath" : "/",
         "devServer" : {
-            "port" : 8080,
-            "disableHostCheck" : true,
+            "host" : "127.0.0.1",
+            "port" : 8081,
             "proxy" : {
                 "/api" : {
-                    "target" : "https://lgpt.ybyq.wang",
-                    "changeOrigin" : true,
-                    "secure" : true
+                    "target" : "http://127.0.0.1:3002",
+                    "changeOrigin" : true
                 }
             }
         },

@@ -1,6 +1,6 @@
 <template>
   <view class="identity-switch" v-if="!isLogin">
-    <button class="cu-btn round bg-blue shadow-warp" @tap="trigger">
+    <button role="button" class="cu-btn round bg-blue shadow-warp" @tap="trigger">
       <text class="cuIcon-refresh"></text>
       <text class="text">{{ buttonText }}</text>
     </button>
@@ -64,7 +64,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28rpx;
+    font-size: var(--font-body);
     color: #FFFFFF;
     transition: all 0.3s;
     box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.15);
@@ -76,7 +76,7 @@ export default {
     
     .cuIcon-refresh {
       margin-right: 10rpx;
-      font-size: 32rpx;
+      font-size: 16px;
     }
     
     .text {

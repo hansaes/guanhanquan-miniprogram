@@ -1,5 +1,12 @@
-import { CLOUD_ENV, API_FUNCTION, API_TIMEOUT, DEV_API_BASE } from '../config'
-
+import {
+  CLOUD_ENV,
+  API_FUNCTION,
+  API_TIMEOUT,
+  DEV_API_BASE,
+  HTTP_API_BASE,
+  HTTP_DEV_LOGIN_KEY
+} from '../config'
+import { clearAuth, promptLogin } from '@/utils/auth'
 
 /** 去掉 undefined / null / 空串，避免被序列化成 "undefined" 传给后端 */
 function prune(data) {
@@ -15,6 +22,7 @@ function prune(data) {
 let inited = false
 
 export function initCloud() {
+  if (HTTP_API_BASE || DEV_API_BASE) return
   if (inited) return
   // #ifdef MP-WEIXIN
   if (!wx.cloud) {
@@ -30,16 +38,10 @@ export function initCloud() {
  */
 
 /** 统一失败处理：401 引导登录，其余弹提示 */
-function handleFailure(body) {
+function handleFailure(body, options = {}) {
   if (body && body.code === 401) {
-    uni.showModal({
-      title: '需要登录',
-      content: '登录后才能联系老板、报名和收藏',
-      confirmText: '去登录',
-      success(res) {
-        if (res.confirm) uni.navigateTo({ url: '/pages/login/login' })
-      }
-    })
+    clearAuth()
+    if (options.authPrompt !== false) promptLogin()
     return
   }
   uni.showToast({ title: (body && body.message) || '请求失败', icon: 'none' })
@@ -72,7 +74,57 @@ function devRequest(path, method, data) {
   })
 }
 
-export function callApi(path, method = 'GET', data = {}) {
+function httpRequest(path, method, data, options = {}) {
+  return new Promise((resolve, reject) => {
+    const token = uni.getStorageSync('token')
+    uni.request({
+      url: HTTP_API_BASE + path,
+      method,
+      data,
+      timeout: API_TIMEOUT,
+      header: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: 'Bearer ' + token } : {})
+      },
+      success(res) {
+        const body = res.data
+        if (body && body.success === true) resolve(body)
+        else {
+          handleFailure(body, options)
+          reject(body || new Error('响应格式错误'))
+        }
+      },
+      fail(err) {
+        uni.showToast({ title: '网络异常，请稍后重试', icon: 'none' })
+        reject(err)
+      }
+    })
+  })
+}
+
+async function httpLogin(data) {
+  let result
+  // #ifdef MP-WEIXIN
+  const session = await new Promise((resolve, reject) =>
+    uni.login({ provider: 'weixin', success: resolve, fail: reject })
+  )
+  if (!session.code) throw new Error('未取得微信登录凭证，请重试')
+  result = await httpRequest('/auth/login', 'POST', { ...data, code: session.code })
+  // #endif
+  // #ifndef MP-WEIXIN
+  if (!HTTP_DEV_LOGIN_KEY) {
+    uni.showToast({ title: '请在微信小程序中登录', icon: 'none' })
+    throw new Error('微信登录仅支持小程序；本地开发可配置开发登录密钥')
+  }
+  result = await httpRequest('/auth/dev-login', 'POST', { key: HTTP_DEV_LOGIN_KEY })
+  // #endif
+  uni.setStorageSync('token', result.data.token)
+  return result
+}
+
+export function callApi(path, method = 'GET', data = {}, options = {}) {
+  if (HTTP_API_BASE)
+    return path === '/auth/login' ? httpLogin(data) : httpRequest(path, method, data, options)
   data = prune(data)
   if (DEV_API_BASE) return devRequest(path, method, data)
   initCloud()
@@ -86,7 +138,7 @@ export function callApi(path, method = 'GET', data = {}) {
         if (body && (body.success || body.code === 0 || body.code === 200)) {
           resolve(body)
         } else {
-          handleFailure(body)
+          handleFailure(body, options)
           reject(body)
         }
       },
@@ -107,6 +159,34 @@ export function callApi(path, method = 'GET', data = {}) {
  * 上传文件到云存储，返回 fileID。
  */
 export function uploadToCloud(filePath, dir = 'upload') {
+  if (HTTP_API_BASE) {
+    return new Promise((resolve, reject) => {
+      uni.uploadFile({
+        url: HTTP_API_BASE + '/files?dir=' + encodeURIComponent(dir),
+        filePath,
+        name: 'file',
+        header: { Authorization: 'Bearer ' + (uni.getStorageSync('token') || '') },
+        timeout: API_TIMEOUT,
+        success(res) {
+          try {
+            const body = JSON.parse(res.data)
+            if (!body.success) {
+              handleFailure(body)
+              reject(body)
+              return
+            }
+            resolve(body.data.url)
+          } catch (error) {
+            reject(error)
+          }
+        },
+        fail(err) {
+          uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+          reject(err)
+        }
+      })
+    })
+  }
   if (DEV_API_BASE) {
     // 本地联调没有云存储，直接用临时路径占位，便于走通界面
     return Promise.resolve(filePath)

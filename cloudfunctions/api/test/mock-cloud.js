@@ -31,6 +31,7 @@ const command = {
   neq: (v) => cmp('neq', v),
   eq: (v) => cmp('eq', v),
   in: (v) => cmp('in', v),
+  nin: (v) => cmp('nin', v),
   and: (...args) => ({ __cmds: args.length === 1 && Array.isArray(args[0]) ? args[0] : args }),
   or: (...args) => ({ __or: args.length === 1 && Array.isArray(args[0]) ? args[0] : args })
 }
@@ -46,6 +47,7 @@ function matchValue(docVal, cond) {
     if (op === 'neq') return docVal !== v
     if (op === 'eq') return docVal === v
     if (op === 'in') return Array.isArray(v) && v.indexOf(docVal) >= 0
+    if (op === 'nin') return Array.isArray(v) && v.indexOf(docVal) < 0
     return false
   }
   if (cond && cond.__regexp) {

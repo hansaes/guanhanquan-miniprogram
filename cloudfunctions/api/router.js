@@ -8,7 +8,8 @@ const handlers = {
   social: require('./handlers/social'),
   wallet: require('./handlers/wallet'),
   blacklist: require('./handlers/blacklist'),
-  admin: require('./handlers/admin')
+  admin: require('./handlers/admin'),
+  management: require('./handlers/management')
 }
 
 // [方法, 路径, 处理器, 鉴权]  鉴权：user=必须登录，admin=管理员令牌，none=公开
@@ -35,11 +36,11 @@ const ROUTES = [
 
   // 招工信息
   ['POST', '/jobs/create', handlers.jobs.create, 'user'],
-  ['GET', '/jobs/list', handlers.jobs.list, 'none'],
+  ['GET', '/jobs/list', handlers.jobs.list, 'user'],
   ['GET', '/jobs/detail/:id', handlers.jobs.detail, 'none'],
-  ['GET', '/jobs/recommended/list', handlers.jobs.recommended, 'none'],
-  ['GET', '/jobs/nearby/list', handlers.jobs.nearby, 'none'],
-  ['GET', '/jobs/latest/list', handlers.jobs.latest, 'none'],
+  ['GET', '/jobs/recommended/list', handlers.jobs.recommended, 'user'],
+  ['GET', '/jobs/nearby/list', handlers.jobs.nearby, 'user'],
+  ['GET', '/jobs/latest/list', handlers.jobs.latest, 'user'],
   ['PUT', '/jobs/update/:id', handlers.jobs.update, 'user'],
   ['DELETE', '/jobs/delete/:id', handlers.jobs.remove, 'user'],
   ['GET', '/employers/jobs/list', handlers.jobs.mine, 'user'],
@@ -58,9 +59,15 @@ const ROUTES = [
   ['POST', '/jobs/applicants/reject/:jobId/:appId', handlers.applications.reject, 'user'],
 
   // 分类与轮播
+  ['GET', '/regions/tree', async () => L.ok(require('./regions').tree), 'none'],
+  ['GET', '/content/ui', require('./handlers/content').publicContent, 'none'],
+  ['GET', '/admin/content', require('./handlers/content').get, 'admin'],
+  ['PUT', '/admin/content', require('./handlers/content').save, 'admin'],
+  ['GET', '/admin/categories', require('./handlers/content').categories, 'admin'],
+  ['POST', '/admin/categories', require('./handlers/content').saveCategory, 'admin'],
   ['GET', '/categories/list', handlers.categories.list, 'none'],
   ['GET', '/categories/:id', handlers.categories.detail, 'none'],
-  ['GET', '/categories/jobs/list/:id', handlers.categories.jobs, 'none'],
+  ['GET', '/categories/jobs/list/:id', handlers.categories.jobs, 'user'],
   ['GET', '/categories/workers/list/:id', handlers.categories.workers, 'none'],
   ['GET', '/banners/list', handlers.categories.banners, 'none'],
   ['GET', '/announcements/list', handlers.social.announcements, 'none'],
@@ -101,6 +108,21 @@ const ROUTES = [
   ['GET', '/feedback/list', handlers.social.myFeedback, 'user'],
 
   // 管理后台
+  ['GET', '/admin/trainings', handlers.management.trainings.list, 'admin'],
+  ['POST', '/admin/trainings', handlers.management.trainings.save, 'admin'],
+  ['PUT', '/admin/trainings/:id', handlers.management.trainings.save, 'admin'],
+  ['DELETE', '/admin/trainings/:id', handlers.management.trainings.deactivate, 'admin'],
+  ['GET', '/admin/training-enrollments', handlers.management.enrollments, 'admin'],
+  ['GET', '/admin/insurances', handlers.management.insurances.list, 'admin'],
+  ['POST', '/admin/insurances', handlers.management.insurances.save, 'admin'],
+  ['PUT', '/admin/insurances/:id', handlers.management.insurances.save, 'admin'],
+  ['DELETE', '/admin/insurances/:id', handlers.management.insurances.deactivate, 'admin'],
+  ['GET', '/admin/insurance-purchases', handlers.management.purchases, 'admin'],
+  ['GET', '/admin/settings', handlers.management.settings, 'admin'],
+  ['PUT', '/admin/settings', handlers.management.saveSettings, 'admin'],
+  ['GET', '/admin/appeals', handlers.management.appeals, 'admin'],
+  ['POST', '/admin/appeals/:id/review', handlers.management.reviewAppeal, 'admin'],
+  ['GET', '/admin/audit-logs', handlers.management.auditLogs, 'admin'],
   ['POST', '/admin/login', handlers.admin.login, 'none'],
   ['GET', '/admin/overview', handlers.admin.overview, 'admin'],
   ['GET', '/admin/jobs', handlers.admin.jobs, 'admin'],
@@ -171,6 +193,10 @@ async function handle(ctx) {
     const result = await handler(ctx)
     return result || L.ok()
   } catch (e) {
+    if (ctx.safeErrors) {
+      const code = e.statusCode || (['23502', '23503', '23505', '23514', '22P02'].includes(e.code) || e instanceof TypeError ? 400 : 500)
+      return L.fail(code === 400 ? '数据格式或关联信息不正确' : (code === 503 ? e.message : '服务暂不可用，请稍后重试'), code)
+    }
     console.error('[api error]', ctx.path, e)
     return L.fail(e && e.message ? e.message : '服务异常', 500)
   }

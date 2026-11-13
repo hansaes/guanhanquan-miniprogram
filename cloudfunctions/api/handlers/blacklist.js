@@ -1,12 +1,6 @@
 const L = require('../lib')
 
-const REASONS = {
-  1: '欠薪/拖薪',
-  2: '放鸽子（到现场没活）',
-  3: '虚假信息（待遇不符）',
-  4: '态度恶劣/克扣工资',
-  5: '其他违规'
-}
+const REASONS = Object.fromEntries(require('../content').defaults.dictionaries.blacklistReasons.map((x) => [x.value, x.label]))
 
 async function salt() {
   return String(await L.getConfig('phoneSalt', process.env.PHONE_SALT || 'ghq-phone-salt'))
@@ -37,9 +31,12 @@ exports.query = async (ctx) => {
     .where({ bossPhoneHash: hash, status: 1 })
     .orderBy('createdAt', 'desc').limit(50).get()
 
+  const ui = await L.getConfig('uiContent', {})
+  const reasons = ui.dictionaries && ui.dictionaries.blacklistReasons
+  const names = reasons ? Object.fromEntries(reasons.map((x) => [x.value, x.label])) : REASONS
   const records = res.data.map((r) => ({
     reasonType: r.reasonType,
-    reasonName: REASONS[r.reasonType] || '其他',
+    reasonName: names[r.reasonType] || '其他',
     detail: r.reasonDetail || '',
     createdAt: r.createdAt
   }))

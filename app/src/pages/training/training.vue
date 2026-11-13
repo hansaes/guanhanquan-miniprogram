@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <cu-custom bgColor="bg-white" isBack>
-      <block slot="content">技能培训</block>
+      <template #content>技能培训</template>
     </cu-custom>
 
     <view class="tabs">
@@ -19,7 +19,7 @@
             <text class="price">{{ c.price ? '¥' + c.price : '免费' }}</text>
           </view>
           <view class="intro">{{ c.intro }}</view>
-          <button class="enroll" @tap="enroll(c)">报名学习</button>
+          <button role="button" class="enroll" @tap="enroll(c)">报名学习</button>
         </view>
       </view>
       <view v-if="!courses.length" class="empty">暂无课程</view>
@@ -82,18 +82,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; padding-bottom: 40rpx; }
+.page { min-height: 100vh; background: var(--canvas); padding-bottom: 40rpx; }
 .tabs { display: flex; background: #fff; }
-.tab { flex: 1; text-align: center; padding: 26rpx 0; font-size: 28rpx; color: #666; }
-.tab.active { color: #1976d2; font-weight: 600; border-bottom: 4rpx solid #1976d2; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; overflow: hidden; }
+.tab { flex: 1; text-align: center; padding: 26rpx 0; font-size: var(--font-body); color: var(--muted); }
+.tab.active { color: var(--primary); font-weight: 600; border-bottom: 4rpx solid var(--primary); }
+.card { background: #fff; margin: 24rpx 32rpx; border-radius: 24rpx; overflow: hidden; }
 .cover { width: 100%; height: 260rpx; }
 .body { padding: 28rpx; }
-.title { font-size: 30rpx; font-weight: 600; }
+.title { font-size: var(--font-control); font-weight: 600; }
 .meta { display: flex; justify-content: space-between; margin-top: 12rpx; }
-.teacher { font-size: 24rpx; color: #999; }
-.price { font-size: 26rpx; color: #e54d42; }
-.intro { margin-top: 10rpx; font-size: 24rpx; color: #999; }
-.enroll { margin-top: 20rpx; background: #1976d2; color: #fff; border-radius: 40rpx; height: 72rpx; line-height: 72rpx; font-size: 28rpx; }
-.empty { text-align: center; color: #999; padding: 120rpx 0; font-size: 26rpx; }
+.teacher { font-size: var(--font-caption); color: var(--muted); }
+.price { font-size: var(--font-small); color: #e54d42; }
+.intro { margin-top: 10rpx; font-size: var(--font-caption); color: var(--muted); }
+.enroll { margin-top: 20rpx; background: var(--primary); color: #fff; border-radius: 40rpx; height: 48px; line-height: 48px; font-size: var(--font-body); }
+.empty { text-align: center; color: var(--muted); padding: 120rpx 0; font-size: var(--font-small); }
 </style>

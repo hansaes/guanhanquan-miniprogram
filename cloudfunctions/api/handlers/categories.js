@@ -21,6 +21,8 @@ async function loadCategories() {
         name: c.name,
         description: c.description || '',
         icon: c.icon || '',
+        enabled: c.enabled !== false,
+        aliases: c.aliases || [],
         sort: c.sort || 0
       }))
     }
@@ -31,7 +33,7 @@ async function loadCategories() {
 }
 
 exports.list = async () => {
-  const list = await loadCategories()
+  const list = (await loadCategories()).filter((c) => c.enabled !== false)
   const coll = L.db().collection('jobs')
   const withCount = []
   const now = Date.now()
@@ -45,6 +47,8 @@ exports.list = async () => {
   }
   return L.ok(withCount)
 }
+
+exports.loadCategories = loadCategories
 
 exports.detail = async (ctx) => {
   const list = await loadCategories()
@@ -93,8 +97,9 @@ exports.workers = async (ctx) => {
   const pageSize = Math.min(50, Math.max(1, parseInt(ctx.data.pageSize, 10) || 20))
   const list = await loadCategories()
   const found = list.find((c) => String(c.id) === String(ctx.params.id) || c.key === ctx.params.id)
-  const key = found ? found.name : ctx.params.id
-  const w = { status: 0, reviewStatus: 1, jobTypes: L.db().RegExp({ regexp: String(key), options: 'i' }) }
+  const names = found ? [found.name].concat(found.aliases || []) : [ctx.params.id]
+  const patterns = names.map((name) => ({ jobTypes: L.db().RegExp({ regexp: String(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), options: 'i' }) }))
+  const w = L.cmd().and({ status: 0, reviewStatus: 1 }, L.cmd().or(patterns))
   const coll = L.db().collection('resumes').where(w)
   const total = (await coll.count()).total
   const res = await coll.orderBy('updatedAt', 'desc').skip((page - 1) * pageSize).limit(pageSize).get()

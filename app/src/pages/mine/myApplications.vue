@@ -1,8 +1,8 @@
 <template>
   <view class="my-applications">
     <!-- 自定义导航栏 -->
-    <cu-custom bgColor="bg-gradual-green " isBack>
-      <block slot="content">我的申请</block>
+    <cu-custom bgColor="bg-white" isBack>
+      <template #content>我的申请</template>
     </cu-custom>
     
     <!-- 状态筛选 -->
@@ -58,7 +58,7 @@
         
         <!-- 取消申请按钮 -->
         <view class="action-bar" v-if="item.status === 'pending'">
-          <button class="cancel-btn" @tap="cancelApplication(item)">取消申请</button>
+          <button role="button" class="cancel-btn" @tap="cancelApplication(item)">取消申请</button>
         </view>
       </view>
     </view>
@@ -231,7 +231,7 @@ export default {
 <style lang="scss">
 .my-applications {
   min-height: 100vh;
-  background-color: #F5F5F5;
+  background-color: var(--canvas);
   padding-bottom: 30rpx;
 }
 
@@ -243,13 +243,13 @@ export default {
   
   .filter-item {
     padding: 10rpx 30rpx;
-    font-size: 28rpx;
-    color: #666;
+    font-size: var(--font-body);
+    color: var(--muted);
     border-radius: 30rpx;
     margin-right: 20rpx;
     
     &.active {
-      background-color: #4CAF50;
+      background-color: var(--primary);
       color: #FFFFFF;
     }
   }
@@ -268,9 +268,9 @@ export default {
       margin-bottom: 20rpx;
       
       .job-title {
-        font-size: 32rpx;
+        font-size: 16px;
         font-weight: bold;
-        color: #333;
+        color: var(--text);
         margin-bottom: 10rpx;
       }
       
@@ -280,23 +280,23 @@ export default {
         margin-bottom: 10rpx;
         
         .salary {
-          font-size: 28rpx;
+          font-size: var(--font-body);
           color: #FF5722;
           margin-right: 20rpx;
         }
         
         .location {
-          font-size: 26rpx;
-          color: #999;
+          font-size: var(--font-small);
+          color: var(--muted);
         }
       }
       
       .job-requirements {
-        font-size: 26rpx;
-        color: #666;
+        font-size: var(--font-small);
+        color: var(--muted);
         
         .label {
-          color: #999;
+          color: var(--muted);
           margin-right: 10rpx;
         }
       }
@@ -308,38 +308,38 @@ export default {
       align-items: center;
       margin-bottom: 20rpx;
       padding: 15rpx 0;
-      border-top: 1rpx solid #F5F5F5;
-      border-bottom: 1rpx solid #F5F5F5;
+      border-top: 1rpx solid var(--canvas);
+      border-bottom: 1rpx solid var(--canvas);
       
       .company-info {
         .company {
-          font-size: 28rpx;
-          color: #666;
+          font-size: var(--font-body);
+          color: var(--muted);
           margin-right: 20rpx;
         }
         
         .employer {
-          font-size: 26rpx;
-          color: #999;
+          font-size: var(--font-small);
+          color: var(--muted);
         }
       }
       
       .contact-info {
         .phone {
-          font-size: 26rpx;
-          color: #4CAF50;
+          font-size: var(--font-small);
+          color: var(--primary);
         }
       }
     }
     
     .application-info {
       .cover-letter {
-        font-size: 26rpx;
-        color: #666;
+        font-size: var(--font-small);
+        color: var(--muted);
         margin-bottom: 15rpx;
         
         .label {
-          color: #999;
+          color: var(--muted);
           margin-right: 10rpx;
         }
       }
@@ -352,7 +352,7 @@ export default {
         .status-tag {
           padding: 4rpx 12rpx;
           border-radius: 20rpx;
-          font-size: 24rpx;
+          font-size: var(--font-caption);
           
           &.status-pending {
             background-color: #FFC107;
@@ -360,7 +360,7 @@ export default {
           }
           
           &.status-accepted {
-            background-color: #4CAF50;
+            background-color: var(--primary);
             color: #FFFFFF;
           }
           
@@ -376,8 +376,8 @@ export default {
         }
         
         .apply-time {
-          font-size: 24rpx;
-          color: #999;
+          font-size: var(--font-caption);
+          color: var(--muted);
         }
       }
     }
@@ -385,14 +385,14 @@ export default {
     .action-bar {
       margin-top: 20rpx;
       padding-top: 20rpx;
-      border-top: 1rpx solid #F5F5F5;
+      border-top: 1rpx solid var(--canvas);
       display: flex;
       justify-content: flex-end;
       
       .cancel-btn {
-        background-color: #F5F5F5;
-        color: #666;
-        font-size: 26rpx;
+        background-color: var(--canvas);
+        color: var(--muted);
+        font-size: var(--font-small);
         padding: 10rpx 30rpx;
         border-radius: 30rpx;
         border: none;
@@ -418,15 +418,15 @@ export default {
   }
   
   text {
-    font-size: 28rpx;
-    color: #999;
+    font-size: var(--font-body);
+    color: var(--muted);
   }
 }
 
 .load-more {
   text-align: center;
   padding: 30rpx;
-  color: #999;
-  font-size: 28rpx;
+  color: var(--muted);
+  font-size: var(--font-body);
 }
 </style> 

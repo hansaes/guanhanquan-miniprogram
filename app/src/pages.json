@@ -11,7 +11,7 @@
     {
       "path": "pages/jobSearch/jobSearch",
       "style": {
-        "navigationBarTitleText": "零工工作台",
+        "navigationBarTitleText": "找活",
         "navigationStyle": "custom"
       }
     },
@@ -32,7 +32,7 @@
     {
       "path": "pages/employer/index",
       "style": {
-        "navigationBarTitleText": "雇主中心",
+        "navigationBarTitleText": "招工管理",
         "navigationStyle": "custom"
       }
     },
@@ -67,7 +67,7 @@
     {
       "path": "pages/employer/resume/index",
       "style": {
-        "navigationBarTitleText": "雇员简历",
+        "navigationBarTitleText": "工人简历库",
         "navigationStyle": "custom"
       }
     },
@@ -206,8 +206,12 @@
       "path": "pages/resume/my",
       "style": {
         "navigationStyle": "custom",
-        "navigationBarTitleText": "我的求职"
+        "navigationBarTitleText": "我的简历"
       }
+    },
+    {
+      "path": "pages/mine/profile",
+      "style": { "navigationStyle": "custom", "navigationBarTitleText": "个人资料" }
     },
     {
       "path": "pages/wallet/index",
@@ -229,20 +233,34 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "申诉"
       }
+    },
+    {
+      "path": "pages/publish/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/resume/edit",
+      "style": {
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "white",
+    "rpxCalcMaxDeviceWidth": 480,
+    "rpxCalcBaseDeviceWidth": 390,
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "管焊圈",
-    "navigationBarBackgroundColor": "#4CAF50",
-    "backgroundColor": "#F8F8F8",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F7F8FA",
     "navigationStyle": "custom"
   },
   "tabBar": {
-    "color": "#8F8F94",
-    "selectedColor": "#4CAF50",
+    "color": "#929AA8",
+    "selectedColor": "#2563EB",
     "backgroundColor": "#FFFFFF",
-    "borderStyle": "black",
+    "borderStyle": "white",
     "height": "50px",
     "fontSize": "10px",
     "iconWidth": "24px",
@@ -251,13 +269,13 @@
         "pagePath": "pages/index/index",
         "iconPath": "static/img/tabbar/home.png",
         "selectedIconPath": "static/img/tabbar/homeactive.png",
-        "text": "找活干"
+        "text": "首页"
       },
       {
-        "pagePath": "pages/jobSearch/jobSearch",
+        "pagePath": "pages/publish/index",
         "iconPath": "static/img/tabbar/task.png",
         "selectedIconPath": "static/img/tabbar/taskactive.png",
-        "text": "任务"
+        "text": "发布招工"
       },
       {
         "pagePath": "pages/mine/mine",
@@ -271,12 +289,17 @@
     "current": 0,
     "list": [
       {
-        "name": "雇主模式-简历",
+        "name": "首页",
+        "path": "pages/index/index",
+        "query": ""
+      },
+      {
+        "name": "工人简历库",
         "path": "pages/employer/resume/index",
         "query": ""
       },
       {
-        "name": "雇主模式-中心",
+        "name": "招工管理",
         "path": "pages/employer/index",
         "query": ""
       },

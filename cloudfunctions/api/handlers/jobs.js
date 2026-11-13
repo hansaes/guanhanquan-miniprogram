@@ -27,6 +27,11 @@ function brief(job, now = Date.now()) {
     salaryUnit: job.salaryUnit || 1,
     workArea: job.workArea,
     workAddress: job.workAddress || '',
+    certificateReq: job.certificateReq || '',
+    accommodation: job.accommodation,
+    travelReimburse: job.travelReimburse,
+    contactName: job.contactName || '',
+    employerAvatar: job.employerAvatar || '',
     duration: job.duration,
     isTop: !!job.isTop && Number(job.topExpireAt || 0) > now,
     isUrgent: !!job.isUrgent,
@@ -104,7 +109,11 @@ exports.list = async (ctx) => {
   const d = ctx.data
   let w = { status: 1 }
   if (d.categoryId) w.categoryId = d.categoryId
-  if (d.city) w.workArea = L.db().RegExp({ regexp: String(d.city), options: 'i' })
+  if (d.regionCode) {
+    const pattern = require('../regions').filterPattern(d.regionCode)
+    if (!pattern) return L.fail('地区无效', 400)
+    w.workArea = L.db().RegExp({ regexp: pattern, options: 'i' })
+  } else if (d.city) w.workArea = L.db().RegExp({ regexp: String(d.city), options: 'i' })
   if (d.minSalary && d.maxSalary) {
     w.salary = L.cmd().gte(Number(d.minSalary)).and(L.cmd().lte(Number(d.maxSalary)))
   } else if (d.minSalary) {
@@ -113,6 +122,9 @@ exports.list = async (ctx) => {
     w.salary = L.cmd().lte(Number(d.maxSalary))
   }
   if (d.isUrgent) w.isUrgent = true
+  if (d.verified) w.employerVerified = true
+  // 薪资筛选和高薪推荐统一以日薪比较，避免小时/月薪混排。
+  if (d.minSalary || d.maxSalary || d.sort === 'salary') w.salaryUnit = L.cmd().nin([2, 3, 4])
   if (d.createdWithin) {
     const hours = Number(d.createdWithin)
     if (hours > 0) w.createdAt = L.cmd().gte(Date.now() - hours * 3600 * 1000)

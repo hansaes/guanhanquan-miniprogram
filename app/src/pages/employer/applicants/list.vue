@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-white" isBack><block slot="content">报名管理</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>报名管理</template></cu-custom>
 
     <view class="card" v-for="j in jobs" :key="j.id">
       <view class="head" @tap="toggle(j)">
@@ -20,8 +20,8 @@
             <text class="note" v-if="a.coverLetter">{{ a.coverLetter }}</text>
           </view>
           <view class="app-ops" v-if="a.status === 'pending'">
-            <button class="ok" @tap="decide(j, a, true)">录用</button>
-            <button class="no" @tap="decide(j, a, false)">拒绝</button>
+            <button role="button" class="ok" @tap="decide(j, a, true)">录用</button>
+            <button role="button" class="no" @tap="decide(j, a, false)">拒绝</button>
           </view>
           <text class="done" v-else>{{ a.status === 'accepted' ? '已录用' : '已拒绝' }}</text>
         </view>
@@ -70,20 +70,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 28rpx; }
+.page { min-height: 100vh; background: var(--canvas); }
+.card { background: #fff; margin: 24rpx 32rpx; border-radius: 24rpx; padding: 28rpx; }
 .head { display: flex; justify-content: space-between; align-items: center; }
-.title { font-size: 32rpx; font-weight: 600; display: block; }
-.meta { font-size: 24rpx; color: #999; }
-.count { font-size: 24rpx; color: #1976d2; }
+.title { font-size: 16px; font-weight: 600; display: block; }
+.meta { font-size: var(--font-caption); color: var(--muted); }
+.count { font-size: var(--font-caption); color: var(--primary); }
 .apps { margin-top: 20rpx; border-top: 1rpx solid #f0f0f0; padding-top: 16rpx; }
 .app { display: flex; justify-content: space-between; align-items: center; padding: 16rpx 0; }
-.name { font-size: 28rpx; margin-right: 16rpx; }
-.phone { font-size: 26rpx; color: #1976d2; }
-.note { display: block; font-size: 24rpx; color: #999; margin-top: 6rpx; }
-.ok { background: #52c41a; color: #fff; font-size: 24rpx; border-radius: 30rpx; padding: 0 20rpx; height: 56rpx; line-height: 56rpx; display: inline-block; margin-right: 12rpx; }
-.no { background: #f5f5f5; color: #666; font-size: 24rpx; border-radius: 30rpx; padding: 0 20rpx; height: 56rpx; line-height: 56rpx; display: inline-block; }
-.done { font-size: 24rpx; color: #999; }
-.empty { font-size: 24rpx; color: #999; text-align: center; padding: 20rpx 0; }
-.empty-page { text-align: center; color: #999; padding: 140rpx 0; font-size: 26rpx; }
+.name { font-size: var(--font-body); margin-right: 16rpx; }
+.phone { font-size: var(--font-small); color: var(--primary); }
+.note { display: block; font-size: var(--font-caption); color: var(--muted); margin-top: 6rpx; }
+.ok { background: #52c41a; color: #fff; font-size: var(--font-caption); border-radius: 30rpx; padding: 0 20rpx; height: 56rpx; line-height: 56rpx; display: inline-block; margin-right: 12rpx; }
+.no { background: var(--canvas); color: var(--muted); font-size: var(--font-caption); border-radius: 30rpx; padding: 0 20rpx; height: 56rpx; line-height: 56rpx; display: inline-block; }
+.done { font-size: var(--font-caption); color: var(--muted); }
+.empty { font-size: var(--font-caption); color: var(--muted); text-align: center; padding: 20rpx 0; }
+.empty-page { text-align: center; color: var(--muted); padding: 140rpx 0; font-size: var(--font-small); }
 </style>

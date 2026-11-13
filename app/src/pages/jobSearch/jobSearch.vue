@@ -1,79 +1,133 @@
 <template>
-  <view class="page">
-    <cu-custom bgColor="bg-gradual-green" :isBack="false"><block slot="content">找活</block></cu-custom>
-
-    <view class="search-box">
-      <view class="search-bar">
-        <input v-model="keyword" placeholder="工种、地区、老板" confirm-type="search" @confirm="reload" />
-        <text class="btn" @tap="reload">搜索</text>
+  <view class="ui-page search-page">
+    <cu-custom isBack><template #content>找活</template></cu-custom>
+    <view class="search-controls">
+      <view class="search-row">
+        <view class="search-input">
+          <uni-icons type="search" size="20" color="#929ba9" />
+          <input
+            aria-label="搜索关键词"
+            v-model="keyword"
+            :placeholder="content.searchPlaceholder || '搜索工种、地区'"
+            confirm-type="search"
+            @confirm="reload"
+          />
+          <button
+            role="button"
+            v-if="keyword"
+            class="clear-search"
+            aria-label="清空搜索"
+            @tap="clearKeyword"
+          >
+            <uni-icons type="clear" size="18" color="#929ba9" />
+          </button>
+        </view>
+        <button class="search-submit" role="button" @tap="reload">搜索</button>
       </view>
-    </view>
-
-    <view class="filter-bar">
-      <picker :range="categoryNames" @change="onCategoryChange">
-        <view :class="['chip', { active: categoryId }]">{{ categoryName || '全部工种' }}</view>
-      </picker>
-      <picker mode="region" :value="region" @change="onRegionChange">
-        <view :class="['chip', { active: city }]">{{ city || '地区' }}</view>
-      </picker>
-      <picker :range="salaryLabels" @change="onSalaryChange">
-        <view :class="['chip', { active: salaryIndex > 0 }]">{{ salaryLabels[salaryIndex] }}</view>
-      </picker>
-    </view>
-
-    <view class="filter-bar">
-      <view :class="['chip', { active: sort === '' }]" @tap="setSort('')">最新</view>
-      <view :class="['chip', { active: sort === 'salary' }]" @tap="setSort('salary')">薪资高</view>
-      <view :class="['chip', { active: sort === 'views' }]" @tap="setSort('views')">浏览多</view>
-      <view :class="['chip', { active: within === 24 }]" @tap="setWithin(24)">24小时</view>
-      <view :class="['chip', { active: within === 72 }]" @tap="setWithin(72)">3天</view>
-      <view :class="['chip', { active: within === 168 }]" @tap="setWithin(168)">一周</view>
-    </view>
-
-    <view class="list">
-      <view class="item" v-for="job in list" :key="job.id" @tap="goDetail(job)">
-        <view class="head">
-          <view class="title-row">
-            <text class="title">{{ job.title }}</text>
-            <text v-if="job.isTop" class="badge top">置顶</text>
-            <text v-if="job.isUrgent" class="badge urgent">急招</text>
+      <view class="filters">
+        <option-picker
+          title="选择工种"
+          :options="categoryNames"
+          :value="categoryIndex"
+          @change="onCategoryChange"
+        >
+          <view class="filter" :class="{ active: categoryId }">
+            <text>{{ categoryName || '工种' }}</text>
+            <uni-icons type="bottom" size="11" />
           </view>
-          <text class="salary">{{ salaryText(job) }}</text>
-        </view>
-        <view class="meta">
-          <text>{{ job.workArea }}</text>
-          <text v-if="job.duration"> · {{ job.duration }}</text>
-        </view>
-        <view class="foot">
-          <text class="company">{{ job.employerName || '雇主' }}</text>
-          <text class="time">{{ ago(job.createdAt) }}</text>
-        </view>
+        </option-picker>
+        <region-picker :value="region" allow-all @change="onRegionChange">
+          <view class="filter" :class="{ active: city }">
+            <text>{{ city || '地区' }}</text>
+            <uni-icons type="bottom" size="11" />
+          </view>
+        </region-picker>
+        <option-picker
+          title="日薪范围"
+          :options="salaryLabels"
+          :value="salaryIndex"
+          @change="onSalaryChange"
+        >
+          <view class="filter" :class="{ active: salaryIndex }">
+            <text>薪资</text>
+            <uni-icons type="bottom" size="11" />
+          </view>
+        </option-picker>
+        <option-picker
+          title="发布时间"
+          :options="timeOptions"
+          :value="timeIndex"
+          @change="onTimeChange"
+        >
+          <view class="filter" :class="{ active: within }">
+            <text>时间</text>
+            <uni-icons type="bottom" size="11" />
+          </view>
+        </option-picker>
+      </view>
+      <view class="sorts" role="radiogroup" aria-label="岗位排序">
+        <button
+          v-for="item in sorts"
+          :key="item.value"
+          class="sort"
+          :class="{ active: sort === item.value }"
+          role="radio"
+          :aria-checked="sort === item.value"
+          @tap="setSort(item.value)"
+        >
+          {{ item.label }}
+        </button>
       </view>
     </view>
-
-    <view v-if="loading" class="hint">加载中...</view>
-    <view v-else-if="!list.length" class="hint">暂无相关岗位</view>
-    <view v-else-if="!hasMore" class="hint">没有更多了</view>
-
-    <view class="tab-space"></view>
+    <view class="ui-body">
+      <button role="button" v-if="metadataError" class="metadata-error" @tap="loadCategories">
+        筛选选项加载失败 · 重试
+      </button>
+      <auth-gate title="登录后查看岗位" @ready="reload">
+        <view class="results-heading">
+          <text>{{ loading && !list.length ? '正在查找' : total + ' 个岗位' }}</text>
+          <button role="button" v-if="hasFilter" class="reset-filter" @tap="resetFilters">
+            重置筛选
+          </button>
+        </view>
+        <page-state
+          v-if="!list.length"
+          :loading="loading"
+          :error="error"
+          empty-text="暂无匹配岗位，试试其他条件"
+          @retry="reload"
+        />
+        <view v-else>
+          <job-card v-for="job in list" :key="job.id" :job="job" />
+          <button role="button" v-if="error" class="retry-more" @tap="loadMore">
+            加载失败，点击重试
+          </button>
+          <view v-else class="ui-end">
+            {{ loading ? '正在加载…' : hasMore ? '上拉加载更多' : '已经到底了' }}
+          </view>
+        </view>
+      </auth-gate>
+    </view>
   </view>
 </template>
-
 <script>
 import api from '@/api/index.js'
-import { salaryText } from '@/utils/job'
-
-const SALARY_RANGES = [
-  { label: '薪资不限', min: '', max: '' },
-  { label: '200-300/天', min: 200, max: 300 },
-  { label: '300-400/天', min: 300, max: 400 },
-  { label: '400-500/天', min: 400, max: 500 },
-  { label: '500+/天', min: 500, max: '' }
-]
+import { content, loadContent, dictionary } from '@/utils/content'
+import { session } from '@/utils/auth'
 
 export default {
   data() {
     return {
+      session,
+      content,
+      error: '',
+      metadataError: false,
+      sorts: [
+        { value: '', label: '最新发布' },
+        { value: 'salary', label: '薪资最高' },
+        { value: 'views', label: '浏览最多' }
+      ],
+      requestId: 0,
       keyword: '',
       sort: '',
       within: '',
@@ -81,8 +135,8 @@ export default {
       categoryName: '',
       categories: [],
       salaryIndex: 0,
-      salaryLabels: SALARY_RANGES.map((x) => x.label),
       region: [],
+      regionCode: '',
       city: '',
       list: [],
       page: 1,
@@ -93,33 +147,83 @@ export default {
     }
   },
   computed: {
+    authenticated() {
+      return this.session.authReady && !!this.session.userInfo?.id
+    },
+    timeIndex() {
+      return Math.max(
+        0,
+        this.timeOptions.findIndex((item) => Number(item.value) === Number(this.within))
+      )
+    },
+    hasFilter() {
+      return !!(this.categoryId || this.regionCode || this.salaryIndex || this.within)
+    },
+    categoryIndex() {
+      return this.categories.findIndex((item) => item.id === this.categoryId) + 1
+    },
+    salaryLabels() {
+      return dictionary('salaryRanges').map((x) => x.label)
+    },
+    timeOptions() {
+      return dictionary('timeRanges')
+    },
     categoryNames() {
       return ['全部工种'].concat(this.categories.map((c) => c.name))
     }
   },
-  onLoad() {
-    this.loadCategories()
-    this.reload()
+  watch: {
+    authenticated(value) {
+      if (!value) this.clearJobs()
+    }
   },
-  onPullDownRefresh() { this.reload(); uni.stopPullDownRefresh() },
-  onReachBottom() { this.loadMore() },
+  onLoad(options) {
+    this.categoryId = options.id || ''
+    this.loadCategories()
+  },
+  async onPullDownRefresh() {
+    await this.reload()
+    uni.stopPullDownRefresh()
+  },
+  onReachBottom() {
+    this.loadMore()
+  },
   methods: {
-    salaryText,
-    ago(ts) {
-      if (!ts) return ''
-      const d = Date.now() - ts
-      const h = 3600 * 1000
-      if (d < h) return '刚刚'
-      if (d < 24 * h) return Math.floor(d / h) + ' 小时前'
-      if (d < 7 * 24 * h) return Math.floor(d / (24 * h)) + ' 天前'
-      return ''
+    clearJobs() {
+      this.requestId++
+      this.list = []
+      this.total = 0
+      this.page = 1
+      this.hasMore = true
+      this.loading = false
+      this.error = ''
+    },
+    clearKeyword() {
+      this.keyword = ''
+      this.reload()
+    },
+    resetFilters() {
+      this.categoryId = ''
+      this.categoryName = ''
+      this.region = []
+      this.regionCode = ''
+      this.city = ''
+      this.salaryIndex = 0
+      this.within = ''
+      this.reload()
+    },
+    onTimeChange(event) {
+      this.within = this.timeOptions[Number(event.detail.value)]?.value || ''
+      this.reload()
     },
     async loadCategories() {
+      this.metadataError = false
       try {
-        const res = await api.getCategories()
+        const [res] = await Promise.all([api.getCategories(), loadContent()])
         this.categories = res.data || []
+        this.categoryName = (this.categories.find((x) => x.id === this.categoryId) || {}).name || ''
       } catch (e) {
-        this.categories = []
+        this.metadataError = true
       }
     },
     onCategoryChange(e) {
@@ -137,23 +241,31 @@ export default {
     onRegionChange(e) {
       const picked = e.detail.value || []
       this.region = picked
-      this.city = String(picked[1] || picked[0] || '').replace(/[省市]$/g, '')
+      this.regionCode = e.detail.code
+      this.city = String(picked[picked.length - 1] || '').replace(/[省市]$/g, '')
       this.reload()
     },
     onSalaryChange(e) {
       this.salaryIndex = Number(e.detail.value)
       this.reload()
     },
-    setSort(v) { this.sort = v; this.reload() },
-    setWithin(v) { this.within = this.within === v ? '' : v; this.reload() },
+    setSort(v) {
+      this.sort = v
+      this.reload()
+    },
+    setWithin(v) {
+      this.within = this.within === v ? '' : v
+      this.reload()
+    },
     params(page) {
-      const range = SALARY_RANGES[this.salaryIndex] || SALARY_RANGES[0]
+      const range = dictionary('salaryRanges')[this.salaryIndex] || {}
       return {
         page,
         pageSize: this.pageSize,
         keyword: this.keyword || undefined,
         categoryId: this.categoryId || undefined,
         city: this.city || undefined,
+        regionCode: this.regionCode || undefined,
         minSalary: range.min || undefined,
         maxSalary: range.max || undefined,
         sort: this.sort || undefined,
@@ -163,28 +275,32 @@ export default {
     async reload() {
       this.page = 1
       this.hasMore = true
-      this.list = []
       await this.fetch(true)
     },
     async loadMore() {
       if (!this.hasMore || this.loading) return
-      this.page += 1
       await this.fetch(false)
     },
     async fetch(reset) {
-      if (this.loading) return
+      if (!this.authenticated) return this.clearJobs()
+      const requestId = ++this.requestId
+      const nextPage = reset ? 1 : this.page + 1
       this.loading = true
+      this.error = ''
+      if (reset) this.list = []
       try {
-        const res = await api.getJobList(this.params(this.page))
+        const res = await api.getJobList(this.params(nextPage))
+        if (requestId !== this.requestId || !this.authenticated) return
+        this.page = nextPage
         const data = res.data || {}
         const records = data.records || []
         this.total = data.total || 0
         this.list = reset ? records : this.list.concat(records)
         this.hasMore = this.list.length < this.total
       } catch (e) {
-        if (reset) this.list = []
+        if (requestId === this.requestId && this.authenticated) this.error = '岗位加载失败'
       } finally {
-        this.loading = false
+        if (requestId === this.requestId) this.loading = false
       }
     },
     goDetail(job) {
@@ -194,26 +310,123 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; }
-.search-box { background: #fff; padding: 16rpx 24rpx; }
-.search-bar { display: flex; align-items: center; background: #f5f6f8; border-radius: 40rpx; padding: 0 24rpx; height: 72rpx; }
-.search-bar input { flex: 1; font-size: 28rpx; }
-.btn { color: #1976d2; font-size: 28rpx; padding-left: 16rpx; }
-.filter-bar { display: flex; flex-wrap: wrap; background: #fff; padding: 0 24rpx 16rpx; }
-.chip { padding: 8rpx 20rpx; margin: 0 12rpx 8rpx 0; border-radius: 30rpx; background: #f5f6f8; color: #666; font-size: 24rpx; }
-.chip.active { background: #1976d2; color: #fff; }
-.list { padding: 20rpx; }
-.item { background: #fff; border-radius: 16rpx; padding: 28rpx; margin-bottom: 20rpx; }
-.head { display: flex; justify-content: space-between; align-items: center; }
-.title-row { display: flex; align-items: center; flex: 1; }
-.title { font-size: 34rpx; font-weight: 600; margin-right: 12rpx; }
-.badge { font-size: 20rpx; padding: 2rpx 10rpx; border-radius: 6rpx; margin-right: 8rpx; }
-.badge.top { background: #fff7e6; color: #fa8c16; }
-.badge.urgent { background: #fff1f0; color: #e54d42; }
-.salary { color: #e54d42; font-size: 32rpx; font-weight: 700; }
-.meta { margin-top: 12rpx; font-size: 26rpx; color: #666; }
-.foot { margin-top: 12rpx; display: flex; justify-content: space-between; font-size: 24rpx; color: #999; }
-.hint { text-align: center; color: #999; font-size: 26rpx; padding: 40rpx 0; }
-.tab-space { height: 40rpx; }
+<style scoped>
+.search-controls {
+  background: #fff;
+  padding: 12rpx 32rpx 0;
+}
+.search-row {
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+}
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #f2f4f7;
+  border-radius: 44rpx;
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 24rpx;
+}
+.search-input input {
+  min-width: 0;
+  flex: 1;
+  font-size: var(--font-body);
+}
+.search-submit {
+  margin: 0;
+  padding: 0 8rpx;
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--font-body);
+  min-height: 44px;
+  line-height: 44px;
+}
+.clear-search {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  min-height: 44px;
+  min-width: 36px;
+  line-height: 44px;
+}
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16rpx;
+}
+.filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-height: 44px;
+  font-size: var(--font-body);
+  color: #566171;
+}
+.filter text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.filter.active {
+  color: var(--primary);
+}
+.sorts {
+  display: flex;
+  border-top: 1rpx solid var(--line);
+  gap: 32rpx;
+}
+.sort {
+  min-height: 44px;
+  background: transparent;
+  margin: 0;
+  padding: 0 4rpx;
+  font-size: var(--font-small);
+  line-height: 44px;
+  color: var(--muted);
+  border-radius: 0;
+  border-bottom: 4rpx solid transparent;
+}
+.sort.active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--primary);
+}
+.results-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64rpx;
+  margin: -8rpx 0 16rpx;
+  color: var(--muted);
+  font-size: var(--font-caption);
+}
+.reset-filter,
+.retry-more {
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--font-small);
+}
+.reset-filter {
+  margin: 0;
+  padding: 0;
+  min-height: 44px;
+  line-height: 44px;
+}
+.retry-more {
+  width: 100%;
+  line-height: 88rpx;
+}
+.metadata-error {
+  padding: 12rpx;
+  font-size: var(--font-small);
+  color: #a45c17;
+  background: #fff1e5;
+  margin-bottom: 20rpx;
+  border-radius: 12rpx;
+}
 </style>

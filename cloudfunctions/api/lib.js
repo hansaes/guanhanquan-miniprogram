@@ -1,6 +1,11 @@
 const crypto = require('crypto')
 
 let _db = null
+let configOverrides = {}
+function setDatabase(database, overrides = {}) {
+  _db = database
+  configOverrides = overrides
+}
 function db() {
   if (!_db) _db = require('wx-server-sdk').database()
   return _db
@@ -75,10 +80,11 @@ function signToken(payload, secret) {
 }
 
 function verifyToken(token, secret) {
-  if (!token || typeof token !== 'string' || token.indexOf('.') < 0) return null
+  if (!token || typeof token !== 'string' || token.split('.').length !== 2) return null
   const [body, sig] = token.split('.')
   const expect = crypto.createHmac('sha256', secret).update(body).digest('base64url')
-  if (sig !== expect) return null
+  const signature = Buffer.from(sig), expected = Buffer.from(expect)
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(signature, expected)) return null
   try {
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'))
     if (payload.exp && Date.now() > payload.exp) return null
@@ -94,10 +100,12 @@ function signTokenLong(payload, secret) {
 
 /** 读取配置项，缺失时返回默认值 */
 async function getConfig(key, fallback) {
+  if (Object.prototype.hasOwnProperty.call(configOverrides, key)) return configOverrides[key]
   try {
     const res = await db().collection('configs').where({ key }).limit(1).get()
     if (res.data.length) return res.data[0].value
   } catch (e) {
+    if (_db && _db.runInTransaction) throw e
     // 集合不存在时走默认值
   }
   return fallback
@@ -194,7 +202,7 @@ function distanceKm(lat1, lng1, lat2, lng2) {
 }
 
 module.exports = {
-  db, cmd, ok, fail, parseHttpEvent,
+  db, setDatabase, cmd, ok, fail, parseHttpEvent,
   pager, listResult,
   hashPhone, maskPhone,
   signToken, signTokenLong, verifyToken,

@@ -54,6 +54,7 @@ export default {
 .employer-tabbar {
   position: fixed;
   bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
   left: 0;
   right: 0;
   height: 50px;
@@ -84,7 +85,7 @@ export default {
     
     &.active {
       text {
-        color: #4CAF50;
+        color: var(--primary);
       }
     }
   }

@@ -1,7 +1,7 @@
 <template>
   <cu-custom :bgColor="bgColor" :isBack="showBack">
-    <block slot="content">{{ title }}</block>
-    <slot name="right" slot="right"></slot>
+    <template #content>{{ title }}</template>
+    <template #right><slot name="right" /></template>
   </cu-custom>
 </template>
 
@@ -11,7 +11,7 @@ export default {
   props: {
     title: { type: String, default: '' },
     showBack: { type: [Boolean, String], default: false },
-    bgColor: { type: String, default: 'bg-gradual-green' }
+    bgColor: { type: String, default: 'bg-white' }
   }
 }
 </script>

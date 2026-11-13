@@ -1,94 +1,171 @@
 <template>
-  <view class="job-detail">
-    <cu-custom bgColor="bg-gradual-green">
-      <block slot="content">招工详情</block>
-    </cu-custom>
-
-    <view v-if="job" class="content">
-      <view class="card header-card">
+  <view class="ui-page detail">
+    <cu-custom isBack><template #content>招工详情</template></cu-custom>
+    <page-state
+      v-if="loading || !job"
+      :loading="loading"
+      :error="error"
+      empty-text="信息不存在或已下架"
+      @retry="load"
+    />
+    <view v-else class="ui-enter">
+      <view class="detail-section summary">
         <view class="title-row">
           <text class="job-title">{{ job.title }}</text>
-          <text v-if="job.isUrgent" class="tag urgent">急招</text>
-          <text v-if="job.isTop" class="tag top">置顶</text>
-        </view>
-        <view class="salary">
           <text class="amount">{{ salaryText(job) }}</text>
-          <text v-if="job.duration" class="duration">{{ job.duration }}</text>
         </view>
-        <view class="meta">
-          <text class="ci-location">{{ job.workArea }}</text>
-          <text class="views">{{ job.viewCount }} 人看过</text>
+        <view class="badges">
+          <text v-if="job.isUrgent" class="ui-tag orange">{{ content.badges.urgent }}</text>
+          <text v-if="job.employerVerified" class="ui-tag blue">{{ content.badges.verified }}</text>
+          <text v-if="job.isTop" class="ui-tag blue">{{ content.badges.top }}</text>
+        </view>
+        <view class="facts">
+          <view>
+            <text class="fact-label">工期信息</text>
+            <text>{{ job.duration || '面议' }}</text>
+          </view>
+          <view>
+            <text class="fact-label">工作地点</text>
+            <text>{{ job.workArea }}</text>
+          </view>
+        </view>
+        <view v-if="job.workAddress" class="address">
+          <text class="fact-label">详细地址</text>
+          <view>
+            <uni-icons type="location-filled" size="18" color="#3981f5" />
+            <text>
+              {{ job.workAddress }}
+            </text>
+          </view>
         </view>
       </view>
-
-      <view class="card">
+      <view class="detail-section">
         <view class="section-title">岗位要求</view>
-        <view class="row"><text class="label">证书</text><text class="value">{{ job.certificateReq || '不限' }}</text></view>
-        <view class="row"><text class="label">年龄</text><text class="value">{{ job.ageLimit || '不限' }}</text></view>
-        <view class="row"><text class="label">技术</text><text class="value">{{ job.techReq || '不限' }}</text></view>
-        <view class="row" v-if="job.otherReq"><text class="label">其他</text><text class="value">{{ job.otherReq }}</text></view>
-      </view>
-
-      <view class="card">
-        <view class="section-title">待遇</view>
-        <view class="row"><text class="label">发放</text><text class="value">{{ payTypeText }}</text></view>
-        <view class="row"><text class="label">食宿</text><text class="value">{{ accommodationText }}</text></view>
-        <view class="row"><text class="label">路费</text><text class="value">{{ travelText }}</text></view>
-        <view class="row" v-if="job.otherBenefits"><text class="label">福利</text><text class="value">{{ job.otherBenefits }}</text></view>
-      </view>
-
-      <view class="card">
-        <view class="section-title">联系方式</view>
-        <view class="row"><text class="label">联系人</text><text class="value">{{ job.contactName || '-' }}</text></view>
         <view class="row">
-          <text class="label">电话</text>
-          <text v-if="job.contactUnlocked" class="value phone" @tap="callPhone">{{ job.contactPhone }}</text>
-          <text v-else class="value locked" @tap="unlock">{{ job.contactPhone }} · 消耗 {{ job.unlockCost }} 积分解锁</text>
+          <text class="label">证书要求</text>
+          <text class="value">
+            {{ labelFor('certificates', job.certificateReq, job.certificateReq || '不限') }}
+          </text>
         </view>
-        <view class="row" v-if="job.wechatSame"><text class="label"></text><text class="value tip">微信同号</text></view>
+        <view class="row">
+          <text class="label">技术要求</text>
+          <text class="value">{{ job.techReq || '不限' }}</text>
+        </view>
+        <view class="row">
+          <text class="label">年龄限制</text>
+          <text class="value">{{ job.ageLimit || '不限' }}</text>
+        </view>
+        <view v-if="job.otherReq" class="row">
+          <text class="label">其他要求</text>
+          <text class="value">{{ job.otherReq }}</text>
+        </view>
       </view>
-
-      <view class="card" v-if="job.employerName">
-        <view class="section-title">发布方</view>
-        <view class="employer">
-          <text class="name">{{ job.employerName }}</text>
-          <text v-if="job.employerVerified" class="verified">已认证</text>
+      <view class="detail-section">
+        <view class="section-title">待遇福利</view>
+        <view class="row">
+          <text class="label">薪资发放</text>
+          <text class="value">{{ payTypeText }}</text>
+        </view>
+        <view class="row">
+          <text class="label">食宿安排</text>
+          <text class="value">{{ accommodationText }}</text>
+        </view>
+        <view class="row">
+          <text class="label">路费报销</text>
+          <text class="value">{{ travelText }}</text>
+        </view>
+        <view v-if="job.otherBenefits" class="row">
+          <text class="label">其他福利</text>
+          <text class="value">{{ job.otherBenefits }}</text>
         </view>
       </view>
-
-      <view class="card">
-        <view class="row action-row" @tap="queryBlack">
-          <text class="value link">查这个老板有没有被举报过</text>
+      <view class="detail-section contact-section">
+        <view class="publisher">
+          <view class="ui-avatar">
+            <uni-icons type="person-filled" size="28" color="#7c94bd" />
+          </view>
+          <view class="publisher-name">
+            <view class="publisher-title">
+              <text>{{ job.contactName || job.employerName || '招工方' }}</text>
+              <uni-icons
+                v-if="job.employerVerified"
+                aria-label="企业已认证"
+                type="checkbox-filled"
+                size="18"
+                color="#3981f5"
+              />
+            </view>
+            <text
+              v-if="job.employerName && job.employerName !== job.contactName"
+              class="publisher-company"
+              >{{ job.employerName }}</text
+            >
+          </view>
+          <button role="button" class="report" @tap="reportJob">举报</button>
         </view>
-        <view class="row action-row" @tap="reportJob">
-          <text class="value link">举报这条信息</text>
+        <view class="phone-row">
+          <text>{{ job.contactPhone }}{{ job.wechatSame ? ' · 微信同号' : '' }}</text>
+          <button role="button" @tap="queryBlack">信用查询</button>
         </view>
+        <button
+          role="button"
+          v-if="!job.isOwner"
+          class="apply"
+          :disabled="applied || applying"
+          :loading="applying"
+          @tap="applyJob"
+        >
+          {{ applied ? '已报名' : '报名此岗位' }}
+        </button>
+      </view>
+      <view v-if="content.safetyNotice" class="safety">
+        <uni-icons type="info" size="15" color="#8b95a5" />
+        <text>{{ content.safetyNotice }}</text>
       </view>
     </view>
-
-    <view v-if="loading" class="loading"><text>加载中...</text></view>
-    <view v-if="!loading && !job" class="empty"><text>信息不存在或已下架</text></view>
-
-    <view class="bottom-bar" v-if="job">
-      <button class="share-btn" open-type="share">分享</button>
-      <view class="fav" @tap="toggleFavorite">
-        <text :class="favorited ? 'fav-on' : 'fav-off'">{{ favorited ? '已收藏' : '收藏' }}</text>
-      </view>
-      <button v-if="!job.isOwner" class="primary" :class="{ applied: applied }" @tap="applyJob">
-        {{ applied ? '已报名' : '报名' }}
+    <view v-if="job" class="bottom-bar">
+      <button
+        role="button"
+        class="icon-action"
+        :aria-label="favorited ? '取消收藏' : '收藏'"
+        @tap="toggleFavorite"
+      >
+        <uni-icons
+          :type="favorited ? 'star-filled' : 'star'"
+          size="25"
+          :color="favorited ? '#2563eb' : '#8a94a3'"
+        />
+        <text>{{ favorited ? '已收藏' : '收藏' }}</text>
       </button>
-      <button v-if="job.isOwner" class="primary" @tap="goManage">管理信息</button>
+      <button role="button" class="icon-action" open-type="share">
+        <uni-icons type="redo" size="25" color="#8a94a3" />
+        <text>分享</text>
+      </button>
+      <button
+        role="button"
+        class="ui-button primary"
+        :loading="unlocking"
+        :disabled="unlocking"
+        @tap="job.isOwner ? goManage() : contact()"
+      >
+        {{ job.isOwner ? '管理信息' : job.contactUnlocked ? '一键拨号' : '查看电话' }}
+      </button>
     </view>
   </view>
 </template>
-
 <script>
 import api from '@/api/index.js'
-import { salaryText, PAY_TYPES, ACCOMMODATION, TRAVEL } from '@/utils/job'
+import { salaryText } from '@/utils/job'
+import { content, loadContent, labelFor } from '@/utils/content'
+import { session, isLoggedIn, requireLogin } from '@/utils/auth'
 
 export default {
   data() {
     return {
+      content,
+      error: '',
+      session,
+      applying: false,
       jobId: '',
       job: null,
       loading: true,
@@ -99,13 +176,13 @@ export default {
   },
   computed: {
     payTypeText() {
-      return PAY_TYPES[this.job && this.job.payType] || '面议'
+      return labelFor('payTypes', this.job && this.job.payType, '面议')
     },
     accommodationText() {
-      return ACCOMMODATION[this.job && this.job.accommodation] || '面议'
+      return labelFor('accommodation', this.job && this.job.accommodation, '面议')
     },
     travelText() {
-      return TRAVEL[this.job && this.job.travelReimburse] || '面议'
+      return labelFor('travel', this.job && this.job.travelReimburse, '面议')
     }
   },
   onLoad(options) {
@@ -114,30 +191,48 @@ export default {
       this.loading = false
       return
     }
+    loadContent().catch(() => {})
     this.load()
   },
   onShareAppMessage() {
     return {
-      title: this.job ? this.job.title + ' ' + this.job.salary + ' 元/天' : '管焊圈招工',
+      title: this.job ? this.job.title + ' ' + salaryText(this.job) : '管焊圈招工',
       path: '/pages/jobDetail/jobDetail?id=' + this.jobId
+    }
+  },
+  onShow() {
+    if (this.job && session.authReady) this.load()
+  },
+  watch: {
+    'session.authReady'(ready) {
+      if (ready && this.job) {
+        this.checkApplied()
+        this.checkFavorite()
+      }
     }
   },
   methods: {
     salaryText,
+    labelFor,
     async load() {
       this.loading = true
+      this.error = ''
       try {
         const res = await api.getJobDetail(this.jobId)
         this.job = res.data
-        await this.checkApplied()
-        await this.checkFavorite()
+        await Promise.all([this.checkApplied(), this.checkFavorite()])
       } catch (e) {
         this.job = null
+        this.error = e && e.code === 404 ? '信息不存在或已下架' : '招工信息加载失败'
       } finally {
         this.loading = false
       }
     },
     async checkApplied() {
+      if (!session.authReady || !isLoggedIn()) {
+        this.applied = false
+        return
+      }
       try {
         const res = await api.checkJobApplication(this.jobId)
         this.applied = res.data.applied
@@ -146,6 +241,10 @@ export default {
       }
     },
     async checkFavorite() {
+      if (!session.authReady || !isLoggedIn()) {
+        this.favorited = false
+        return
+      }
       try {
         const res = await api.checkFavorite(this.jobId)
         this.favorited = res.data.favorited
@@ -154,10 +253,13 @@ export default {
       }
     },
     unlock() {
+      if (!requireLogin()) return
       uni.showModal({
         title: '解锁联系方式',
         content: `将消耗 ${this.job.unlockCost} 积分查看老板电话，确认继续？`,
-        success: (r) => { if (r.confirm) this.doUnlock() }
+        success: (r) => {
+          if (r.confirm) this.doUnlock()
+        }
       })
     },
     async doUnlock() {
@@ -174,29 +276,42 @@ export default {
         this.unlocking = false
       }
     },
+    contact() {
+      if (this.job.contactUnlocked) this.callPhone()
+      else this.unlock()
+    },
     callPhone() {
       uni.makePhoneCall({ phoneNumber: this.job.contactPhone })
     },
     async applyJob() {
-      if (this.applied) return
+      if (!requireLogin()) return
+      if (this.applied || this.applying) return
+      this.applying = true
       try {
         await api.applyForJob(this.jobId, {})
         this.applied = true
         uni.showToast({ title: '报名成功', icon: 'success' })
       } catch (e) {
-        // 重复报名等错误已提示
+        // 请求层展示错误
+      } finally {
+        this.applying = false
       }
     },
     async toggleFavorite() {
+      if (!requireLogin()) return
       try {
         const res = await api.toggleFavorite(this.jobId)
         this.favorited = res.data.favorited
       } catch (e) {}
     },
     queryBlack() {
-      uni.navigateTo({ url: '/pages/blacklist/query?phone=' + (this.job.contactUnlocked ? this.job.contactPhone : '') })
+      uni.navigateTo({
+        url:
+          '/pages/blacklist/query?phone=' + (this.job.contactUnlocked ? this.job.contactPhone : '')
+      })
     },
     reportJob() {
+      if (!requireLogin()) return
       uni.navigateTo({ url: '/pages/report/report?id=' + this.jobId })
     },
     goManage() {
@@ -205,59 +320,212 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-.job-detail {
-  min-height: 100vh;
-  background: #f5f6f8;
-  padding-bottom: 140rpx;
+<style scoped>
+.detail {
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
 }
-.content { padding: 20rpx; }
-.card {
+.detail-section {
   background: #fff;
-  border-radius: 16rpx;
-  padding: 28rpx;
-  margin-bottom: 20rpx;
+  padding: 40rpx 32rpx;
+  margin-bottom: 22rpx;
 }
-.header-card { padding-top: 32rpx; }
-.title-row { display: flex; align-items: center; }
-.job-title { font-size: 38rpx; font-weight: 600; margin-right: 16rpx; }
-.tag { font-size: 22rpx; padding: 4rpx 12rpx; border-radius: 8rpx; margin-left: 12rpx; }
-.tag.urgent { background: #ffece8; color: #e54d42; }
-.tag.top { background: #fff7e6; color: #fa8c16; }
-.salary { margin-top: 16rpx; display: flex; align-items: baseline; }
-.amount { font-size: 44rpx; color: #e54d42; font-weight: 700; }
-.unit { font-size: 24rpx; color: #e54d42; margin-left: 6rpx; }
-.duration { font-size: 24rpx; color: #888; margin-left: 20rpx; }
-.meta { margin-top: 12rpx; display: flex; justify-content: space-between; font-size: 24rpx; color: #888; }
-.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 16rpx; }
-.row { display: flex; padding: 12rpx 0; font-size: 28rpx; }
-.label { width: 110rpx; color: #999; flex-shrink: 0; }
-.value { color: #333; flex: 1; }
-.value.phone { color: #1976d2; font-weight: 600; }
-.value.locked { color: #fa8c16; }
-.value.tip { color: #52c41a; font-size: 24rpx; }
-.value.link { color: #1976d2; }
-.action-row { border-top: 1rpx solid #f0f0f0; }
-.action-row:first-child { border-top: none; }
-.employer { display: flex; align-items: center; }
-.name { font-size: 30rpx; margin-right: 12rpx; }
-.verified { font-size: 22rpx; color: #52c41a; border: 1rpx solid #52c41a; padding: 2rpx 8rpx; border-radius: 6rpx; }
-.loading, .empty { text-align: center; color: #999; padding: 120rpx 0; }
+.summary {
+  padding-top: 42rpx;
+  padding-bottom: 48rpx;
+}
+.title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+.job-title {
+  font-size: var(--font-display);
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+}
+.amount {
+  font-size: var(--font-display);
+  font-weight: 700;
+  color: var(--salary);
+  flex-shrink: 0;
+}
+.badges {
+  display: flex;
+  gap: 12rpx;
+  margin: 22rpx 0 32rpx;
+}
+.facts {
+  border-top: 1rpx solid var(--line);
+  padding-top: 28rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32rpx;
+  font-size: var(--font-control);
+  color: var(--text);
+}
+.fact-label {
+  display: block;
+  font-size: var(--font-small);
+  color: var(--muted);
+  margin-bottom: 10rpx;
+}
+.address {
+  margin-top: 28rpx;
+  color: var(--text);
+  font-size: var(--font-control);
+  line-height: 1.6;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-heading);
+  font-weight: 650;
+  margin-bottom: 26rpx;
+}
+.section-title::before {
+  content: '';
+  width: 7rpx;
+  height: 30rpx;
+  border-radius: 6rpx;
+  background: var(--primary);
+  margin-right: 16rpx;
+}
+.row {
+  display: flex;
+  gap: 24rpx;
+  padding: 14rpx 0;
+  line-height: 1.75;
+  font-size: var(--font-body);
+}
+.label {
+  color: var(--muted);
+  width: 155rpx;
+  flex-shrink: 0;
+}
+.value {
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.publisher {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.publisher-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-control);
+  font-weight: 600;
+}
+.publisher-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.publisher-title text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.publisher-title :deep(.uni-icons) {
+  flex-shrink: 0;
+  line-height: 1;
+}
+.publisher-company {
+  display: block;
+  font-size: var(--font-caption);
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 8rpx;
+}
+.report {
+  border: 2rpx solid #5586ff;
+  border-radius: 40rpx;
+  padding: 0 28rpx;
+  color: var(--primary);
+  min-height: 44px;
+  line-height: 44px;
+  font-size: var(--font-small);
+  background: #fff;
+  margin: 0;
+}
+.phone-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+  color: var(--muted);
+  font-size: var(--font-small);
+}
+.phone-row button {
+  min-height: 44px;
+  background: transparent;
+  padding: 8rpx 0;
+  margin: 0;
+  color: var(--primary);
+  font-size: var(--font-small);
+}
+.apply {
+  margin-top: 20rpx;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: var(--font-body);
+  min-height: 48px;
+  line-height: 48px;
+  border-radius: 24rpx;
+}
+.safety {
+  display: flex;
+  gap: 10rpx;
+  padding: 24rpx 40rpx 40rpx;
+  font-size: var(--font-caption);
+  line-height: 1.65;
+  color: #7c8798;
+}
 .bottom-bar {
-  position: fixed; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: center;
-  background: #fff; padding: 16rpx 24rpx calc(16rpx + constant(safe-area-inset-bottom));
-  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+  position: fixed;
+  z-index: 80;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1rpx solid var(--line);
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
 }
-.share-btn { width: 110rpx; background: transparent; color: #1976d2; font-size: 26rpx; line-height: 1.4; padding: 0; margin-right: 10rpx; }
-.share-btn::after { border: none; }
-.fav { width: 120rpx; text-align: center; font-size: 26rpx; }
-.fav-on { color: #fa8c16; }
-.fav-off { color: #999; }
+.icon-action {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  background: transparent;
+  color: #778293;
+  font-size: var(--font-caption);
+  line-height: 1.7;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  margin: 0;
+}
 .primary {
-  flex: 1; background: #1976d2; color: #fff; border-radius: 44rpx;
-  font-size: 30rpx; line-height: 80rpx; height: 80rpx;
+  flex: 1;
+  box-shadow: 0 8rpx 20rpx rgba(37, 99, 235, 0.18);
 }
-.primary.applied { background: #b0bec5; }
+.icon-action :deep(.uni-icons) {
+  line-height: 1;
+}
+@media (max-width: 360px) {
+  .amount {
+    font-size: var(--font-title);
+  }
+  .job-title {
+    font-size: 21px;
+  }
+}
 </style>

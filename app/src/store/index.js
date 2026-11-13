@@ -3,6 +3,7 @@ import { createStore } from 'vuex'
 export default createStore({
   state: {
     userInfo: null,
+    authReady: false,
     userType: 'employee', // employee（工人）/ employer（招工方）
     hasNewMessage: false,
     location: {
@@ -13,6 +14,9 @@ export default createStore({
     }
   },
   mutations: {
+    setAuthReady(state, ready) {
+      state.authReady = ready
+    },
     setUserInfo(state, userInfo) {
       state.userInfo = userInfo
     },

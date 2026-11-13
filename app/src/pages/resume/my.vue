@@ -1,202 +1,320 @@
 <template>
-  <view class="page">
-    <cu-custom bgColor="bg-gradual-green" isBack><block slot="content">我的求职</block></cu-custom>
-
-    <view v-if="form.reviewStatus === 0" class="banner">简历待平台审核，通过后招工方才看得到</view>
-    <view v-else-if="form.reviewStatus === 2" class="banner danger">未通过审核：{{ form.rejectReason || '资料不完整' }}</view>
-
-    <view class="card">
-      <view class="row">
-        <text class="label">求职状态</text>
-        <switch :checked="form.status === 0" color="#1976d2" @change="onStatus" />
-        <text class="hint">{{ form.status === 0 ? '招工方可以看到你' : '已关闭，招工方看不到' }}</text>
-      </view>
-    </view>
-
-    <view class="card">
-      <view class="section-title">基本信息</view>
-      <view class="row"><text class="label">称呼</text><input class="input" v-model="form.name" placeholder="如：李师傅" /></view>
-      <view class="row"><text class="label">电话</text><input class="input" type="number" maxlength="11" v-model="form.contactPhone" /></view>
-      <view class="row"><text class="label">微信</text><input class="input" v-model="form.wechat" placeholder="选填" /></view>
-      <view class="row"><text class="label">工作年限</text>
-        <picker :range="years" @change="(e) => form.workExperience = years[e.detail.value]">
-          <view class="picker">{{ form.workExperience || '请选择' }}</view>
-        </picker>
-      </view>
-      <view class="row"><text class="label">证书</text>
-        <picker :range="certs" @change="(e) => form.certificateInfo = certs[e.detail.value]">
-          <view class="picker">{{ form.certificateInfo || '请选择' }}</view>
-        </picker>
-      </view>
-      <view class="row column">
-        <text class="label">证书照片</text>
-        <view class="images">
-          <view class="img-box" v-for="(img, i) in form.certificateImages" :key="i">
-            <image :src="img" mode="aspectFill" @tap="previewCert(i)" />
-            <text class="del" @tap="removeCert(i)">×</text>
+  <view class="ui-page resume-page">
+    <cu-custom :is-back="true"><template #content>我的简历</template></cu-custom>
+    <auth-gate title="登录后管理简历" @ready="load">
+      <view class="ui-body">
+        <page-state v-if="loading || error" :loading="loading" :error="error" @retry="load" />
+        <view v-else class="ui-enter">
+          <view class="status-card">
+            <view>
+              <text class="status-title">
+                {{ !profile.id ? '创建你的简历' : profile.status === 0 ? '正在找活' : '暂不找活' }}
+              </text>
+              <text class="status-note">
+                {{
+                  !profile.id
+                    ? '完善资料后可公开求职'
+                    : profile.status === 0
+                      ? '向招工方展示简历'
+                      : '已暂停简历展示'
+                }}
+              </text>
+            </view>
+            <switch
+              :checked="!!profile.id && profile.status === 0"
+              :disabled="saving || !profile.id"
+              color="#7ca6ff"
+              aria-label="公开求职简历"
+              @change="changeStatus"
+            />
           </view>
-          <view class="img-add" v-if="form.certificateImages.length < 3" @tap="chooseCert">+</view>
+          <view v-if="profile.reviewStatus === 0" class="review-note">简历审核中</view>
+          <view v-else-if="profile.reviewStatus === 2" class="review-note rejected">
+            {{ profile.rejectReason || '请完善资料后重新提交' }}
+          </view>
+          <view class="ui-card profile-card">
+            <view class="profile-header">
+              <view class="ui-avatar large">
+                <image v-if="profile.avatar" :src="profile.avatar" mode="aspectFill" />
+                <uni-icons v-else type="person-filled" size="36" color="#7c94bd" />
+              </view>
+              <view class="profile-main">
+                <text class="name">{{ profile.name || '完善你的简历' }}</text>
+                <text class="meta">
+                  {{ [profile.workExperience, profile.expectArea].filter(Boolean).join(' · ') }}
+                </text>
+              </view>
+              <button role="button" class="ui-text-button" @tap="edit">编辑</button>
+            </view>
+            <view class="contact-row">
+              <uni-icons type="phone-filled" size="21" color="#98a1ae" />
+              <text>{{ maskedPhone || '未填写电话' }}</text>
+            </view>
+            <view v-if="profile.wechat" class="contact-row">
+              <uni-icons type="weixin" size="21" color="#98a1ae" />
+              <text>{{ profile.wechat }}</text>
+            </view>
+          </view>
+          <view class="ui-card">
+            <view class="ui-section-heading">
+              <view class="heading">
+                <uni-icons type="settings-filled" size="23" color="#3981f5" />
+                <text class="ui-title">工种与技能</text>
+              </view>
+              <button role="button" class="ui-text-button" @tap="edit">编辑</button>
+            </view>
+            <text class="field-label">主攻工种</text>
+            <view class="tags">
+              <text v-for="type in profile.jobTypes" :key="type" class="ui-tag blue">{{
+                type
+              }}</text>
+              <text v-if="!profile.jobTypes.length" class="missing">未填写</text>
+            </view>
+            <text class="field-label">持有证书</text>
+            <view class="tags">
+              <text v-if="profile.certificateInfo" class="ui-tag green">
+                {{ labelFor('certificates', profile.certificateInfo, profile.certificateInfo) }}
+              </text>
+              <text v-else class="missing">未填写</text>
+            </view>
+            <text class="field-label">技术描述</text>
+            <text class="description">{{ profile.techDescription || '未填写' }}</text>
+          </view>
+          <view class="ui-card">
+            <view class="ui-section-heading">
+              <view class="heading">
+                <uni-icons type="location" size="23" color="#3981f5" />
+                <text class="ui-title">求职意向</text>
+              </view>
+              <button role="button" class="ui-text-button" @tap="edit">编辑</button>
+            </view>
+            <view class="intention-grid">
+              <view>
+                <text class="field-label">期望地区</text>
+                <text>{{ profile.expectArea || '未填写' }}</text>
+              </view>
+              <view>
+                <text class="field-label">期望薪资</text>
+                <text class="salary">{{ profile.expectSalary || '面议' }}</text>
+              </view>
+              <view>
+                <text class="field-label">到岗时间</text>
+                <text>
+                  {{
+                    labelFor(
+                      'availability',
+                      profile.availableTime,
+                      profile.availableTime || '未填写'
+                    )
+                  }}
+                </text>
+              </view>
+              <view>
+                <text class="field-label">工作年限</text>
+                <text>
+                  {{
+                    labelFor(
+                      'experience',
+                      profile.workExperience,
+                      profile.workExperience || '未填写'
+                    )
+                  }}
+                </text>
+              </view>
+            </view>
+          </view>
+          <button role="button"
+            class="ui-button ui-button-ghost"
+            :loading="saving"
+            :disabled="saving"
+            @tap="profile.id ? refresh() : edit()"
+          >
+            {{ profile.id ? '刷新简历' : '创建简历' }}
+          </button>
         </view>
       </view>
-    </view>
-
-    <view class="card">
-      <view class="section-title">技能</view>
-      <view class="tags">
-        <view v-for="t in jobTypeOptions" :key="t"
-          :class="['tag', { active: form.jobTypes.includes(t) }]" @tap="toggleType(t)">{{ t }}</view>
-      </view>
-      <textarea class="textarea" v-model="form.techDescription" maxlength="200"
-        placeholder="擅长什么材质、什么工艺，例如：氩电焊、不锈钢管道、能包口" />
-    </view>
-
-    <view class="card">
-      <view class="section-title">求职意向</view>
-      <view class="row"><text class="label">期望地区</text><input class="input" v-model="form.expectArea" placeholder="如：东北三省 / 沈阳" /></view>
-      <view class="row"><text class="label">期望薪资</text><input class="input" v-model="form.expectSalary" placeholder="如：600-700/天" /></view>
-      <view class="row"><text class="label">到岗时间</text>
-        <picker :range="availables" @change="(e) => form.availableTime = availables[e.detail.value]">
-          <view class="picker">{{ form.availableTime || '请选择' }}</view>
-        </picker>
-      </view>
-    </view>
-
-    <button class="submit" :loading="saving" @tap="save">保存简历</button>
-    <button class="delete" @tap="deleteResume">删除简历</button>
+    </auth-gate>
   </view>
 </template>
-
 <script>
 import api from '@/api/index.js'
-
+import { loadContent, labelFor } from '@/utils/content'
+import { session } from '@/utils/auth'
 export default {
-  data() {
-    return {
-      saving: false,
-      years: ['1 年以内', '1-3 年', '3-5 年', '5-8 年', '8 年以上'],
-      certs: ['双证', '单证', '无证', '有证成手'],
-      availables: ['随时到岗', '一周内', '半个月后', '面议'],
-      jobTypeOptions: ['管工', '焊工', '普工', '铆工', '起重工', '电工', '技术员'],
-      form: {
-        name: '', contactPhone: '', wechat: '', workExperience: '', certificateInfo: '',
-        certificateImages: [], jobTypes: [], techDescription: '', expectArea: '', expectSalary: '',
-        availableTime: '', status: 0, reviewStatus: 1, rejectReason: ''
-      }
+  data: () => ({
+    session,
+    loadedOnce: false,
+    loading: true,
+    error: '',
+    saving: false,
+    profile: { jobTypes: [], status: 1 }
+  }),
+  computed: {
+    maskedPhone() {
+      return String(this.profile.contactPhone || '').replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2')
     }
   },
-  onLoad() { this.load() },
+  onShow() {
+    loadContent().catch(() => {})
+    if (this.loadedOnce && session.authReady && session.userInfo) this.load()
+  },
   methods: {
+    labelFor,
     async load() {
+      this.loading = true
+      this.error = ''
       try {
-        const res = await api.getWorkerProfile()
-        const d = res.data || {}
-        this.form = Object.assign({}, this.form, {
-          name: d.name || '',
-          contactPhone: d.contactPhone || '',
-          wechat: d.wechat || '',
-          workExperience: d.workExperience || '',
-          certificateInfo: d.certificateInfo || '',
-          certificateImages: d.certificateImages || [],
-          jobTypes: d.jobTypes || [],
-          techDescription: d.techDescription || '',
-          expectArea: d.expectArea || '',
-          expectSalary: d.expectSalary || '',
-          availableTime: d.availableTime || '',
-          status: d.status === undefined ? 0 : d.status,
-          reviewStatus: d.reviewStatus === undefined ? 1 : d.reviewStatus,
-          rejectReason: d.rejectReason || ''
-        })
-      } catch (e) {}
+        const r = await api.getWorkerProfile()
+        this.profile = { ...r.data, jobTypes: r.data.jobTypes || [] }
+      } catch (e) {
+        this.error = '简历加载失败，请重试'
+      } finally {
+        this.loading = false
+        this.loadedOnce = true
+      }
     },
-    onStatus(e) {
-      this.form.status = e.detail.value ? 0 : 1
+    edit() {
+      uni.navigateTo({ url: '/pages/resume/edit' })
     },
-    toggleType(t) {
-      const i = this.form.jobTypes.indexOf(t)
-      if (i >= 0) this.form.jobTypes.splice(i, 1)
-      else this.form.jobTypes.push(t)
-    },
-    chooseCert() {
-      uni.chooseImage({
-        count: 3 - this.form.certificateImages.length,
-        sizeType: ['compressed'],
-        success: async (res) => {
-          uni.showLoading({ title: '上传中' })
-          try {
-            for (const path of res.tempFilePaths) {
-              const fileID = await api.uploadFile(path, 'certificate')
-              this.form.certificateImages.push(fileID)
-            }
-          } catch (e) {
-            uni.showToast({ title: '上传失败', icon: 'none' })
-          } finally {
-            uni.hideLoading()
-          }
-        }
-      })
-    },
-    previewCert(i) {
-      uni.previewImage({ current: this.form.certificateImages[i], urls: this.form.certificateImages })
-    },
-    removeCert(i) {
-      this.form.certificateImages.splice(i, 1)
-    },
-    async deleteResume() {
-      uni.showModal({
-        title: '删除简历',
-        content: '删除后招工方将看不到你的简历，确认删除？',
-        confirmColor: '#e54d42',
-        success: async (r) => {
-          if (!r.confirm) return
-          try {
-            await api.deleteWorkerProfile()
-            this.form = Object.assign({}, this.form, {
-              name: '', jobTypes: [], certificateInfo: '', certificateImages: [],
-              workExperience: '', techDescription: '', expectArea: '', expectSalary: '',
-              availableTime: '', status: 1, reviewStatus: 1
-            })
-            uni.showToast({ title: '已删除', icon: 'success' })
-          } catch (e) {}
-        }
-      })
-    },
-    async save() {
-      if (!this.form.name) return uni.showToast({ title: '请填写称呼', icon: 'none' })
-      if (!/^1\d{10}$/.test(String(this.form.contactPhone))) return uni.showToast({ title: '请填写正确手机号', icon: 'none' })
-      if (!this.form.jobTypes.length) return uni.showToast({ title: '请至少选一个工种', icon: 'none' })
+    async changeStatus(e) {
+      if (this.saving) return
+      const previous = this.profile.status
+      this.profile.status = e.detail.value ? 0 : 1
       this.saving = true
       try {
-        await api.updateWorkerProfile(this.form)
-        this.form.reviewStatus = 0
-        this.form.rejectReason = ''
-        uni.showToast({ title: '已保存，等待审核', icon: 'success' })
-      } catch (e) {} finally { this.saving = false }
+        await api.updateWorkerProfile({ status: this.profile.status })
+      } catch (e) {
+        this.profile.status = previous
+      } finally {
+        this.saving = false
+      }
+    },
+    async refresh() {
+      if (this.saving) return
+      this.saving = true
+      try {
+        await api.updateWorkerProfile({ status: this.profile.status })
+        uni.showToast({ title: '简历已刷新', icon: 'success' })
+      } catch (e) {
+      } finally {
+        this.saving = false
+      }
     }
   }
 }
 </script>
-
-<style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; padding-bottom: 40rpx; }
-.card { background: #fff; margin: 20rpx; border-radius: 16rpx; padding: 28rpx; }
-.section-title { font-size: 30rpx; font-weight: 600; margin-bottom: 12rpx; }
-.row { display: flex; align-items: center; padding: 18rpx 0; border-bottom: 1rpx solid #f5f5f5; }
-.row:last-child { border-bottom: none; }
-.label { width: 150rpx; color: #666; font-size: 28rpx; flex-shrink: 0; }
-.input { flex: 1; font-size: 28rpx; }
-.picker { font-size: 28rpx; color: #333; }
-.hint { font-size: 22rpx; color: #999; margin-left: 12rpx; }
-.tags { display: flex; flex-wrap: wrap; margin-bottom: 12rpx; }
-.tag { padding: 10rpx 24rpx; margin: 0 12rpx 12rpx 0; border-radius: 30rpx; background: #f5f6f8; font-size: 26rpx; color: #666; }
-.tag.active { background: #1976d2; color: #fff; }
-.textarea { width: 100%; height: 160rpx; background: #f7f8fa; border-radius: 12rpx; padding: 20rpx; font-size: 28rpx; box-sizing: border-box; }
-.submit { margin: 20rpx 24rpx 0; background: #1976d2; color: #fff; border-radius: 44rpx; height: 84rpx; line-height: 84rpx; font-size: 30rpx; }
-.delete { margin: 20rpx 24rpx; background: transparent; color: #e54d42; font-size: 28rpx; }
-.banner { margin: 20rpx; padding: 18rpx 24rpx; border-radius: 12rpx; background: #fff7e6; color: #fa8c16; font-size: 24rpx; }
-.banner.danger { background: #fff1f0; color: #e54d42; }
-.images { display: flex; flex-wrap: wrap; margin-top: 12rpx; }
-.img-box, .img-add { width: 140rpx; height: 140rpx; margin: 0 14rpx 14rpx 0; border-radius: 10rpx; overflow: hidden; position: relative; }
-.img-box image { width: 100%; height: 100%; }
-.img-add { border: 1rpx dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 48rpx; color: #bbb; }
-.del { position: absolute; top: 0; right: 0; width: 40rpx; height: 40rpx; line-height: 40rpx; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 26rpx; }
+<style scoped>
+.resume-page {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.status-card {
+  background: #2563eb;
+  color: #fff;
+  border-radius: 28rpx;
+  padding: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+.status-title {
+  display: block;
+  font-size: var(--font-title);
+  font-weight: 650;
+}
+.status-note {
+  display: block;
+  font-size: var(--font-small);
+  color: #dbe7ff;
+  margin-top: 10rpx;
+}
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24rpx;
+  margin-bottom: 30rpx;
+}
+.large {
+  width: 112rpx;
+  height: 112rpx;
+}
+.profile-main {
+  flex: 1;
+  min-width: 0;
+  padding-top: 8rpx;
+}
+.name {
+  display: block;
+  font-size: var(--font-title);
+  font-weight: 650;
+}
+.meta {
+  display: block;
+  margin-top: 14rpx;
+  color: var(--muted);
+  font-size: var(--font-small);
+  line-height: 1.6;
+}
+.contact-row {
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+  color: #5b6778;
+  font-size: var(--font-control);
+  padding: 12rpx 0;
+}
+.heading {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+.field-label {
+  display: block;
+  color: var(--muted);
+  font-size: var(--font-small);
+  margin-bottom: 16rpx;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 30rpx;
+}
+.tags .ui-tag {
+  border-radius: 40rpx;
+  padding: 8rpx 24rpx;
+  font-size: var(--font-small);
+}
+.missing {
+  color: var(--muted);
+}
+.description {
+  font-size: var(--font-control);
+  color: var(--text);
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+.intention-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32rpx 24rpx;
+  font-size: var(--font-control);
+  color: var(--text);
+}
+.salary {
+  font-weight: 600;
+}
+.review-note {
+  margin: -8rpx 0 24rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 12rpx;
+  color: #aa6a0a;
+  background: #fff4df;
+  font-size: var(--font-small);
+}
+.rejected {
+  background: #fff0ef;
+  color: #bf4343;
+}
 </style>

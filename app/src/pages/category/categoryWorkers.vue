@@ -7,9 +7,9 @@
     <view class="search-bar">
       <view class="search-input">
         <image class="search-icon" src="/static/img/icons/search.png" mode="aspectFit"></image>
-        <input type="text" :placeholder="`搜索${categoryName}相关工人`" confirm-type="search" v-model="keyword" @confirm="search" />
+        <input aria-label="搜索关键词" type="text" :placeholder="`搜索${categoryName}相关工人`" confirm-type="search" v-model="keyword" @confirm="search" />
       </view>
-      <button class="search-btn" @click="search">搜索</button>
+      <button role="button" class="search-btn" @click="search">搜索</button>
     </view>
     
     <!-- 工人列表 -->
@@ -30,7 +30,7 @@
         </view>
         <view class="update-time">{{ fmt(worker.updatedAt) }}</view>
         <view class="action-buttons">
-          <button class="action-btn call-btn" @click.stop="viewWorkerDetail(worker)">查看简历</button>
+          <button role="button" class="action-btn call-btn" @click.stop="viewWorkerDetail(worker)">查看简历</button>
         </view>
       </view>
       
@@ -112,7 +112,7 @@ export default {
 <style lang="scss">
 .category-workers-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--canvas);
   padding-bottom: 30rpx;
   
   .search-bar {
@@ -124,7 +124,7 @@ export default {
     .search-input {
       flex: 1;
       height: 70rpx;
-      background: #F5F5F5;
+      background: var(--canvas);
       border-radius: 35rpx;
       display: flex;
       align-items: center;
@@ -140,7 +140,7 @@ export default {
       input {
         flex: 1;
         height: 70rpx;
-        font-size: 26rpx;
+        font-size: var(--font-small);
       }
     }
     
@@ -149,10 +149,10 @@ export default {
       height: 70rpx;
       line-height: 70rpx;
       text-align: center;
-      background: #4CAF50;
+      background: var(--primary);
       border-radius: 35rpx;
       color: #FFF;
-      font-size: 26rpx;
+      font-size: var(--font-small);
       padding: 0;
     }
   }
@@ -164,14 +164,14 @@ export default {
     padding: 20rpx 30rpx;
     margin: 0 20rpx;
     margin-bottom: 20rpx;
-    border-radius: 16rpx;
+    border-radius: 24rpx;
     box-shadow: 0 4rpx 16rpx 0 rgba(0, 0, 0, 0.08);
     
     .filter-item {
       display: flex;
       align-items: center;
-      font-size: 24rpx;
-      color: #666;
+      font-size: var(--font-caption);
+      color: var(--muted);
     }
   }
   
@@ -183,7 +183,7 @@ export default {
       background-color: #FFFFFF;
       padding: 24rpx;
       margin-bottom: 20rpx;
-      border-radius: 16rpx;
+      border-radius: 24rpx;
       box-shadow: 0 4rpx 16rpx 0 rgba(0, 0, 0, 0.08);
       
       .worker-info {
@@ -192,15 +192,15 @@ export default {
         align-items: center;
         margin-bottom: 16rpx;
         
-        .cert-tag { font-size: 20rpx; color: #52c41a; border: 1rpx solid #52c41a; border-radius: 4rpx; padding: 0 6rpx; margin-left: 8rpx; }
+        .cert-tag { font-size: var(--font-caption); color: #52c41a; border: 1rpx solid #52c41a; border-radius: 4rpx; padding: 0 6rpx; margin-left: 8rpx; }
   .name-tag {
           display: flex;
           align-items: center;
           
           .name {
-            font-size: 32rpx;
+            font-size: 16px;
             font-weight: bold;
-            color: #333;
+            color: var(--text);
             margin-right: 10rpx;
           }
           
@@ -221,20 +221,20 @@ export default {
             width: 16rpx;
             height: 16rpx;
             border-radius: 50%;
-            background-color: #4CAF50;
+            background-color: var(--primary);
             margin-right: 6rpx;
           }
           
           text {
-            font-size: 22rpx;
-            color: #4CAF50;
+            font-size: var(--font-caption);
+            color: var(--primary);
           }
         }
       }
       
       .basic-info {
-        font-size: 26rpx;
-        color: #666;
+        font-size: var(--font-small);
+        color: var(--muted);
         margin-bottom: 16rpx;
       }
       
@@ -253,16 +253,16 @@ export default {
           }
           
           text {
-            font-size: 26rpx;
-            color: #666;
+            font-size: var(--font-small);
+            color: var(--muted);
           }
         }
       }
       
       .update-time {
         text-align: right;
-        font-size: 24rpx;
-        color: #999;
+        font-size: var(--font-caption);
+        color: var(--muted);
         margin-bottom: 16rpx;
       }
       
@@ -275,18 +275,18 @@ export default {
           height: 70rpx;
           line-height: 70rpx;
           border-radius: 35rpx;
-          font-size: 28rpx;
+          font-size: var(--font-body);
           padding: 0;
         }
         
         .call-btn {
-          background-color: #4CAF50;
+          background-color: var(--primary);
           color: #FFFFFF;
         }
         
         .message-btn {
-          background-color: #F5F5F5;
-          color: #666;
+          background-color: var(--canvas);
+          color: var(--muted);
         }
       }
     }
@@ -305,8 +305,8 @@ export default {
       }
       
       text {
-        font-size: 28rpx;
-        color: #999;
+        font-size: var(--font-body);
+        color: var(--muted);
       }
     }
   }
@@ -323,14 +323,14 @@ export default {
       margin-bottom: 30rpx;
       
       text {
-        font-size: 32rpx;
-        color: #333;
+        font-size: 16px;
+        color: var(--text);
         font-weight: bold;
       }
       
       .close-btn {
-        font-size: 28rpx;
-        color: #999;
+        font-size: var(--font-body);
+        color: var(--muted);
       }
     }
     
@@ -345,22 +345,22 @@ export default {
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #F5F5F5;
+        background-color: var(--canvas);
         border-radius: 35rpx;
         margin-right: 3%;
         margin-bottom: 20rpx;
         
         text {
-          font-size: 26rpx;
-          color: #666;
+          font-size: var(--font-small);
+          color: var(--muted);
         }
         
         &.active {
           background-color: #E8F5E9;
-          border: 1rpx solid #4CAF50;
+          border: 1rpx solid var(--primary);
           
           text {
-            color: #4CAF50;
+            color: var(--primary);
           }
         }
       }
@@ -375,16 +375,16 @@ export default {
         height: 80rpx;
         line-height: 80rpx;
         border-radius: 40rpx;
-        font-size: 28rpx;
+        font-size: var(--font-body);
       }
       
       .reset-btn {
-        background-color: #F5F5F5;
-        color: #666;
+        background-color: var(--canvas);
+        color: var(--muted);
       }
       
       .confirm-btn {
-        background-color: #4CAF50;
+        background-color: var(--primary);
         color: #FFFFFF;
       }
     }

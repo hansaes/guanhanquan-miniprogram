@@ -1,32 +1,34 @@
 <template>
   <view class="page">
-    <cu-custom bgColor="bg-white" isBack><block slot="content">设置</block></cu-custom>
+    <cu-custom bgColor="bg-white" isBack><template #content>设置</template></cu-custom>
+    <auth-gate title="登录后管理账号设置">
+      <view class="group">
+        <button role="button" class="item item-btn" @tap="editProfile">
+          <text>头像与昵称</text><text class="arrow">›</text>
+        </button>
+        <button role="button" class="item item-btn" open-type="getPhoneNumber" @getphonenumber="bindPhone">
+          <text>修改手机号</text><text class="arrow">›</text>
+        </button>
+        <view class="item">
+          <text>在简历中展示手机号</text>
+          <switch :checked="showPhone" color="#2563eb" @change="toggleShowPhone" />
+        </view>
+        <view class="item" @tap="openDoc('privacy-policy')">
+          <text>隐私政策</text><text class="arrow">›</text>
+        </view>
+        <view class="item" @tap="openDoc('user-agreement')">
+          <text>用户协议</text><text class="arrow">›</text>
+        </view>
+        <view class="item" @tap="clearCache">
+          <text>清除缓存</text><text class="arrow">›</text>
+        </view>
+        <view class="item" @tap="about"> <text>关于我们</text><text class="arrow">›</text> </view>
+      </view>
 
-    <view class="group">
-      <button class="item item-btn" open-type="getPhoneNumber" @getphonenumber="bindPhone">
-        <text>修改手机号</text><text class="arrow">›</text>
-      </button>
-      <view class="item">
-        <text>在简历中展示手机号</text>
-        <switch :checked="showPhone" color="#1976d2" @change="toggleShowPhone" />
-      </view>
-      <view class="item" @tap="openDoc('privacy-policy')">
-        <text>隐私政策</text><text class="arrow">›</text>
-      </view>
-      <view class="item" @tap="openDoc('user-agreement')">
-        <text>用户协议</text><text class="arrow">›</text>
-      </view>
-      <view class="item" @tap="clearCache">
-        <text>清除缓存</text><text class="arrow">›</text>
-      </view>
-      <view class="item" @tap="about">
-        <text>关于我们</text><text class="arrow">›</text>
-      </view>
-    </view>
-
-    <button class="logout" @tap="logout">退出登录</button>
-    <button class="danger" @tap="deleteAccount">注销账号</button>
-    <view class="version">管焊圈 v1.0.0</view>
+      <button role="button" class="logout" @tap="logout">退出登录</button>
+      <button role="button" class="danger" @tap="deleteAccount">注销账号</button>
+      <view class="version">管焊圈 v1.0.0</view>
+    </auth-gate>
   </view>
 </template>
 
@@ -43,6 +45,9 @@ export default {
     this.showPhone = u.showPhone !== false
   },
   methods: {
+    editProfile() {
+      uni.navigateTo({ url: '/pages/mine/profile' })
+    },
     openDoc(name) {
       const map = {
         'privacy-policy': '/pages/common/privacy-policy',
@@ -76,7 +81,10 @@ export default {
         content: '将清除本地缓存（不影响账号数据）',
         success: (r) => {
           if (!r.confirm) return
-          uni.clearStorageSync()
+          const accountKeys = new Set(['token', 'ghq_user', 'userType', 'ghq_employer'])
+          uni.getStorageInfoSync().keys.forEach((key) => {
+            if (!accountKeys.has(key)) uni.removeStorageSync(key)
+          })
           uni.showToast({ title: '已清除', icon: 'success' })
         }
       })
@@ -84,7 +92,8 @@ export default {
     about() {
       uni.showModal({
         title: '关于管焊圈',
-        content: '面向焊工、管工、铆工、起重工的招工找活平台。运营主体：沈阳市苏家屯区管焊圈互联网服务网店。',
+        content:
+          '面向焊工、管工、铆工、起重工的招工找活平台。运营主体：沈阳市苏家屯区管焊圈互联网服务网店。',
         showCancel: false
       })
     },
@@ -96,7 +105,7 @@ export default {
           if (!r.confirm) return
           clearAuth()
           this.$store.commit('setUserInfo', null)
-          uni.reLaunch({ url: '/pages/login/login' })
+          uni.reLaunch({ url: '/pages/index/index' })
         }
       })
     },
@@ -111,7 +120,7 @@ export default {
           try {
             await api.deleteAccount()
             clearAuth()
-            uni.reLaunch({ url: '/pages/login/login' })
+            uni.reLaunch({ url: '/pages/index/index' })
           } catch (e) {}
         }
       })
@@ -121,14 +130,57 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f6f8; }
-.group { background: #fff; margin-top: 20rpx; }
-.item { display: flex; justify-content: space-between; align-items: center; padding: 32rpx; border-bottom: 1rpx solid #f5f5f5; font-size: 30rpx; }
-.item:last-child { border-bottom: none; }
-.item-btn { margin: 0; background: #fff; border-radius: 0; text-align: left; line-height: normal; }
-.item-btn::after { border: none; }
-.arrow { color: #ccc; }
-.logout { margin: 40rpx 24rpx 0; color: #e54d42; background: #fff; border-radius: 44rpx; height: 84rpx; line-height: 84rpx; font-size: 30rpx; }
-.danger { margin: 20rpx 24rpx 0; color: #999; background: transparent; font-size: 26rpx; }
-.version { text-align: center; color: #bbb; font-size: 22rpx; margin-top: 30rpx; }
+.page {
+  min-height: 100vh;
+  background: var(--canvas);
+}
+.group {
+  background: #fff;
+  margin-top: 20rpx;
+}
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid var(--canvas);
+  font-size: var(--font-control);
+}
+.item:last-child {
+  border-bottom: none;
+}
+.item-btn {
+  margin: 0;
+  background: #fff;
+  border-radius: 0;
+  text-align: left;
+  line-height: normal;
+}
+.item-btn::after {
+  border: none;
+}
+.arrow {
+  color: #ccc;
+}
+.logout {
+  margin: 40rpx 24rpx 0;
+  color: #e54d42;
+  background: #fff;
+  border-radius: 20rpx;
+  height: 48px;
+  line-height: 48px;
+  font-size: var(--font-control);
+}
+.danger {
+  margin: 24rpx 32rpx 0;
+  color: var(--muted);
+  background: transparent;
+  font-size: var(--font-small);
+}
+.version {
+  text-align: center;
+  color: #bbb;
+  font-size: var(--font-caption);
+  margin-top: 30rpx;
+}
 </style>

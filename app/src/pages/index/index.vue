@@ -1,706 +1,526 @@
 <template>
-  <view class="index-container">
-    <!-- 自定义导航栏 -->
-    <cu-custom bgColor="bg-gradual-green" :isBack="false">
-      <block slot="content">
-        <text class="header-title">管焊圈</text>
-      </block>
+  <view class="ui-page ui-tab-page home">
+    <cu-custom>
+      <template #content>{{ content.brandName || '管焊圈' }}</template>
     </cu-custom>
-    
-    <!-- 搜索栏 -->
-    <view class="search-box">
-      <view class="search-bar" @tap="goToSearch">
-        <picker mode="region" :value="region" @change="onRegionChange">
-          <view class="location-btn">
-            <text>{{ city || '区域' }}</text>
-            <text class="cuIcon-unfold"></text>
+    <view class="search-panel">
+      <view class="search-row">
+        <region-picker :value="region" allow-all @change="onRegion">
+          <view class="city">
+            <uni-icons type="location-filled" size="20" color="#2563eb" />
+            <text>{{ city || '全国' }}</text>
+            <uni-icons type="bottom" size="12" color="#2563eb" />
           </view>
-        </picker>
-        <view class="search-form">
-          <text class="cuIcon-search text-gray"></text>
-          <text class="text-gray">您想找一份什么样的工作?</text>
+        </region-picker>
+        <view class="search-input">
+          <uni-icons type="search" size="20" color="#929ba9" />
+          <input
+            aria-label="搜索关键词"
+            v-model="keyword"
+            :placeholder="content.searchPlaceholder || '搜索'"
+            confirm-type="search"
+            @confirm="reload"
+          />
+          <button
+            role="button"
+            v-if="keyword"
+            class="clear"
+            aria-label="清空搜索"
+            @tap="clearSearch"
+          >
+            <uni-icons type="clear" size="16" color="#929ba9" />
+          </button>
         </view>
-        <view class="search-btn">搜索</view>
       </view>
-    </view>
-
-    <!-- 轮播图 (招募广告) -->
-    <view class="banner-wrapper" :style="{height: bannerHeight}">
-      <swiper class="screen-swiper" 
-              :indicator-dots="true"
-              :indicator-color="'rgba(255, 255, 255, .3)'"
-              :indicator-active-color="'#ffffff'"
-              :autoplay="true" 
-              :circular="true" 
-              :interval="3000" 
-              :duration="500">
-        <swiper-item v-for="(item, index) in banners" :key="index" @tap="bannerTap(item)">
-          <image v-if="item.imageUrl" :src="item.imageUrl" mode="aspectFill" class="swiper-image"></image>
-          <view v-else class="promo-card">
-            <text class="promo-title">{{ item.title || '招工找活上管焊圈' }}</text>
-            <text class="promo-sub">管工 · 焊工 · 铆工 · 起重工</text>
-            <text class="promo-tag">日薪直招 · 老板电话直连</text>
+      <view class="filter-row">
+        <option-picker
+          title="选择工种"
+          :options="categoryNames"
+          :value="categoryIndex"
+          @change="selectCategory"
+        >
+          <view class="filter" :class="{ active: categoryId }">
+            {{ categoryName || '工种' }}
+            <uni-icons type="bottom" size="11" />
           </view>
-        </swiper-item>
-      </swiper>
-    </view>
-    
-    <!-- 分类导航 -->
-    <view class="category-section">
-      <view class="category-grid">
-        <view class="category-item" v-for="(item, index) in categories" :key="index" @tap="goToCategory(item)">
-          <view class="icon-wrapper">
-            <image v-if="item.icon" :src="item.icon" mode="aspectFit" class="category-icon"></image>
-            <text v-else class="category-initial">{{ item.name.charAt(0) }}</text>
+        </option-picker>
+        <option-picker
+          title="日薪范围"
+          :options="salaryOptions"
+          :value="salaryIndex"
+          @change="selectSalary"
+        >
+          <view class="filter" :class="{ active: salaryIndex }">
+            薪资
+            <uni-icons type="bottom" size="11" />
           </view>
-          <text class="category-name">{{item.name}}</text>
-        </view>
+        </option-picker>
+        <option-picker
+          title="发布时间"
+          :options="timeOptions"
+          :value="timeIndex"
+          @change="selectTime"
+        >
+          <view class="filter" :class="{ active: timeIndex }">
+            时间
+            <uni-icons type="bottom" size="11" />
+          </view>
+        </option-picker>
+        <button class="filter filter-reset" role="button" @tap="reset">
+          <uni-icons :type="hasFilter ? 'reload' : 'settings'" size="17" color="#2563eb" />
+          {{ hasFilter ? '重置' : '筛选' }}
+        </button>
       </view>
     </view>
-    
-    <!-- 推广横幅 (可选) -->
-    <view class="promo-banner" v-if="showPromoBanner">
-      <image src="/static/img/default/shili.png" mode="widthFix"></image>
+    <view class="ui-body">
+      <button role="button" v-if="metadataError" class="metadata-error" @tap="initialize(true)">
+        {{ metadataError }} · 重试
+      </button>
+      <view v-if="banners.length" class="banner-wrapper">
+        <swiper
+          class="banner"
+          :indicator-dots="banners.length > 1"
+          indicator-color="rgba(255,255,255,.4)"
+          indicator-active-color="#fff"
+          :autoplay="false"
+          circular
+        >
+          <swiper-item v-for="item in banners" :key="item.id" @tap="bannerTap(item)">
+            <image
+              v-if="item.imageUrl && !failedImages[item.id]"
+              :src="item.imageUrl"
+              mode="aspectFill"
+              class="banner-image"
+              @error="failedImages[item.id] = true"
+            />
+            <view v-else class="banner-fallback">
+              <text>{{ item.title }}</text>
+              <uni-icons type="staff-filled" size="70" color="rgba(255,255,255,.35)" />
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+      <view v-if="content.shortcuts.length" class="quick-grid">
+        <button
+          v-for="item in content.shortcuts"
+          :key="item.value"
+          class="quick-item"
+          role="button"
+          :aria-label="item.label"
+          :aria-pressed="shortcut === item.value"
+          hover-class="quick-pressed"
+          :hover-start-time="0"
+          :hover-stay-time="120"
+          :class="{ chosen: shortcut === item.value }"
+          @tap="selectShortcut(item.value)"
+        >
+          <view class="quick-icon" :class="'tone-' + item.tone">
+            <uni-icons :type="item.icon" size="26" :color="tones[item.tone]" />
+          </view>
+          <text>{{ item.label }}</text>
+        </button>
+      </view>
+      <auth-gate title="登录后查看岗位" target="/pages/index/index" @ready="reload">
+        <view v-if="hasFilter" class="result-label">
+          <text>{{ total }} 个岗位</text>
+          <text v-if="salaryIndex && salaryOptions[salaryIndex]">
+            {{ salaryOptions[salaryIndex].label }}
+          </text>
+          <text v-if="timeIndex && timeOptions[timeIndex]">{{ timeOptions[timeIndex].label }}</text>
+        </view>
+        <page-state
+          v-if="!jobs.length"
+          :loading="!metadataReady || loading"
+          :error="error"
+          empty-text="暂无匹配岗位，试试其他条件"
+          @retry="load"
+        />
+        <view v-else class="job-list">
+          <job-card v-for="job in jobs" :key="job.id" :job="job" />
+          <button role="button" v-if="error" class="retry-more" @tap="load(false)">
+            加载失败，点击重试
+          </button>
+          <view v-else class="ui-end">
+            {{ loading ? '正在加载…' : hasMore ? '上拉加载更多' : '已经到底了' }}
+          </view>
+        </view>
+      </auth-gate>
     </view>
-    
-    <!-- 岗位推荐分类标签 -->
-    <view class="section-divider"></view>
-    <view class="recommend-section">
-      <view class="recommend-tabs">
-        <view class="tab-item" :class="{active: currentTab === 'hot'}" @tap="switchTab('hot')">
-          <text>热门推荐</text>
-        </view>
-        <view class="tab-item" :class="{active: currentTab === 'nearest'}" @tap="switchTab('nearest')">
-          <text>离我最近</text>
-        </view>
-        <view class="tab-item" :class="{active: currentTab === 'latest'}" @tap="switchTab('latest')">
-          <text>最新岗位</text>
-        </view>
-      </view>
-      
-      <!-- 热门推荐岗位 -->
-      <view class="job-list-container" v-if="currentTab === 'hot'">
-        <view class="job-list">
-          <job-card v-for="(job, index) in recommendJobs" :key="index" :job="job"></job-card>
-          <view class="more-jobs" @tap="gotoMoreJobs">查看更多岗位 <text class="cuIcon-right"></text></view>
-        </view>
-      </view>
-      
-      <!-- 离我最近岗位 -->
-      <view class="job-list-container" v-if="currentTab === 'nearest'">
-        <view class="job-list">
-          <job-card v-for="(job, index) in nearestJobs" :key="index" :job="job"></job-card>
-          <view class="more-jobs" @tap="gotoMoreJobs">查看更多岗位 <text class="cuIcon-right"></text></view>
-        </view>
-      </view>
-      
-      <!-- 最新岗位 -->
-      <view class="job-list-container" v-if="currentTab === 'latest'">
-        <view class="job-list">
-          <job-card v-for="(job, index) in latestJobs" :key="index" :job="job"></job-card>
-          <view class="more-jobs" @tap="gotoMoreJobs">查看更多岗位 <text class="cuIcon-right"></text></view>
-        </view>
-      </view>
-    </view>
-    
+    <app-tabbar :current="0" />
   </view>
 </template>
-
 <script>
-import JobCard from '@/components/job-card.vue'
-import API from '@/api/index.js'
-
+import api from '@/api/index.js'
+import { content, loadContent, dictionary } from '@/utils/content'
+import { navigate } from '@/utils/navigation'
+import { session } from '@/utils/auth'
 export default {
-  components: {
-    JobCard
+  data: () => ({
+    session,
+    content,
+    keyword: '',
+    city: '',
+    region: [],
+    regionCode: '',
+    categories: [],
+    categoryId: '',
+    categoryName: '',
+    salaryIndex: 0,
+    timeIndex: 0,
+    shortcut: '',
+    banners: [],
+    metadataError: '',
+    metadataReady: false,
+    failedImages: {},
+    jobs: [],
+    loading: false,
+    error: '',
+    page: 1,
+    total: 0,
+    hasMore: true,
+    requestId: 0,
+    tones: { blue: '#2563eb', green: '#16a05a', orange: '#ed670d', purple: '#9250dc' }
+  }),
+  computed: {
+    authenticated() {
+      return this.session.authReady && !!this.session.userInfo?.id
+    },
+    categoryIndex() {
+      return this.categories.findIndex((item) => item.id === this.categoryId) + 1
+    },
+    categoryNames() {
+      return ['全部工种', ...this.categories.map((x) => x.name)]
+    },
+    salaryOptions() {
+      return dictionary('salaryRanges')
+    },
+    timeOptions() {
+      return dictionary('timeRanges')
+    },
+    hasFilter() {
+      return !!(
+        this.keyword ||
+        this.city ||
+        this.categoryId ||
+        this.salaryIndex ||
+        this.timeIndex ||
+        this.shortcut
+      )
+    }
   },
-  data() {
-    return {
-      currentTab: 'hot', // hot, nearest, latest
-      banners: [],
-      bannerHeight: 'auto',
-      showPromoBanner: false,
-      categories: [],
-      city: '',
-      region: [],
-      points: 0,
-      recommendJobs: [],
-      nearestJobs: [],
-      latestJobs: [],
-      isLoading: false,
-      location: null,
-      pageSize: 20,
-      currentPage: 1,
-      hasMore: true
+  watch: {
+    authenticated(value) {
+      if (!value) this.clearJobs()
     }
   },
   onLoad() {
-    this.getUserLocation()
-    this.preloadBannerImage()
-    this.fetchHomeData()
-    this.loadPoints()
+    this.initialize()
   },
-  // 添加下拉刷新
-  onPullDownRefresh() {
-    this.refreshData()
+  onShow() {
+    uni.hideTabBar({ animation: false })
+    loadContent().catch(() => {})
   },
-  // 添加触底加载更多
-  onReachBottom() {
-    if (this.hasMore && !this.isLoading) {
-      this.loadMoreJobs()
+  async onPullDownRefresh() {
+    try {
+      await this.initialize(true)
+    } finally {
+      uni.stopPullDownRefresh()
     }
   },
+  onReachBottom() {
+    if (!this.loading && this.hasMore) this.load(false)
+  },
   methods: {
-    // 刷新数据
-    async refreshData() {
-      this.currentPage = 1
+    clearJobs() {
+      this.requestId++
+      this.jobs = []
+      this.total = 0
+      this.page = 1
       this.hasMore = true
-      await this.fetchHomeData()
-      uni.stopPullDownRefresh()
+      this.loading = false
+      this.error = ''
     },
-    
-    // 加载更多工作
-    async loadMoreJobs() {
-      if (!this.hasMore || this.isLoading) return
-      
-      this.isLoading = true
-      try {
-        const newJobs = await this.fetchJobsByTab(this.currentTab, this.currentPage + 1)
-        if (newJobs && newJobs.length > 0) {
-          this.currentPage++
-          switch (this.currentTab) {
-            case 'hot':
-              this.recommendJobs = [...this.recommendJobs, ...newJobs]
-              break
-            case 'nearest':
-              this.nearestJobs = [...this.nearestJobs, ...newJobs]
-              break
-            case 'latest':
-              this.latestJobs = [...this.latestJobs, ...newJobs]
-              break
-          }
-        } else {
-          this.hasMore = false
-        }
-      } catch (error) {
-        console.error('加载更多工作失败', error)
-        uni.showToast({
-          title: '加载失败，请稍后再试',
-          icon: 'none'
+    clearSearch() {
+      this.keyword = ''
+      this.reload()
+    },
+    async initialize(force) {
+      const metadata = Promise.allSettled([
+        loadContent(force),
+        api.getBanners().then((r) => {
+          this.banners = r.data || []
+        }),
+        api.getCategories().then((r) => {
+          this.categories = r.data || []
         })
+      ])
+      const results = await metadata
+      this.metadataError =
+        results[0].status === 'rejected' || results[2].status === 'rejected'
+          ? '筛选内容加载失败'
+          : ''
+      this.metadataReady = true
+      await this.reload()
+    },
+    async load(reset = true) {
+      if (!this.authenticated || !this.metadataReady) return this.clearJobs()
+      const requestId = ++this.requestId
+      const page = reset ? 1 : this.page + 1
+      this.loading = true
+      this.error = ''
+      if (reset) this.jobs = []
+      const range = this.salaryOptions[this.salaryIndex] || {}
+      const time = this.timeOptions[this.timeIndex] || {}
+      try {
+        const res = await api.getJobList({
+          page,
+          pageSize: 15,
+          keyword: this.keyword.trim(),
+          city: this.city,
+          regionCode: this.regionCode || undefined,
+          categoryId: this.categoryId,
+          minSalary: range.min || undefined,
+          maxSalary: range.max || undefined,
+          createdWithin: this.shortcut === 'latest' ? 24 : time.value || undefined,
+          isUrgent: this.shortcut === 'urgent' || undefined,
+          verified: this.shortcut === 'verified' || undefined,
+          sort: this.shortcut === 'salary' ? 'salary' : ''
+        })
+        if (requestId !== this.requestId || !this.authenticated) return
+        this.jobs = reset ? res.data.records : this.jobs.concat(res.data.records)
+        this.page = page
+        this.total = res.data.total
+        this.hasMore = this.jobs.length < this.total
+      } catch (e) {
+        if (requestId === this.requestId && this.authenticated) this.error = '岗位加载失败，请重试'
       } finally {
-        this.isLoading = false
+        if (requestId === this.requestId) this.loading = false
       }
     },
-	
-	// 新增方法：性别英文转中文
-	  formatGender(gender) {
-	    const genderMap = {
-	      'male': '男性',
-	      'female': '女性',
-	      'none': '无要求'
-	    }
-	    return genderMap[gender] || '无要求'
-	  },
-
-    // 根据标签获取工作列表
-    async fetchJobsByTab(tab, page = 1) {
-      try {
-        let response
-        switch (tab) {
-          case 'hot':
-            response = await API.getRecommendedJobs({ page, pageSize: this.pageSize, city: this.city || undefined })
-            break
-          case 'nearest':
-            response = await API.getNearbyJobs({ 
-              page, 
-              pageSize: this.pageSize,
-              city: this.city || undefined,
-              latitude: this.location && this.location.latitude,
-              longitude: this.location && this.location.longitude
-            })
-            break
-          case 'latest':
-            response = await API.getLatestJobs({ page, pageSize: this.pageSize, city: this.city || undefined })
-            break
-        }
-        
-        if (response && response.code === 0 && response.data) {
-          const records = response.data.records || []
-          return records.map((job) => Object.assign({}, job, { distance: job.distance }))
-        }
-        return []
-      } catch (error) {
-        console.error(`获取${tab}工作列表失败`, error)
-        return []
+    reload() {
+      return this.load(true)
+    },
+    onRegion(e) {
+      this.region = e.detail.value
+      this.regionCode = e.detail.code
+      this.city = String(this.region[this.region.length - 1] || '').replace(/[省市]$/g, '')
+      this.reload()
+    },
+    selectCategory(e) {
+      const c = this.categories[Number(e.detail.value) - 1]
+      this.categoryId = c ? c.id : ''
+      this.categoryName = c ? c.name : ''
+      this.reload()
+    },
+    selectSalary(e) {
+      this.salaryIndex = Number(e.detail.value)
+      this.reload()
+    },
+    selectTime(e) {
+      this.timeIndex = Number(e.detail.value)
+      this.reload()
+    },
+    selectShortcut(value) {
+      this.shortcut = this.shortcut === value ? '' : value
+      this.reload()
+    },
+    reset() {
+      if (!this.hasFilter) {
+        uni.navigateTo({ url: '/pages/jobSearch/jobSearch' })
+        return
       }
+      this.keyword = ''
+      this.city = ''
+      this.region = []
+      this.regionCode = ''
+      this.categoryId = ''
+      this.categoryName = ''
+      this.salaryIndex = 0
+      this.timeIndex = 0
+      this.shortcut = ''
+      this.reload()
     },
-
-    // 格式化日期
-    formatDate(dateStr) {
-      if (!dateStr) return ''
-      const date = new Date(dateStr)
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const day = date.getDate().toString().padStart(2, '0')
-      return `${month}月${day}日`
-    },
-
-    // 获取首页所需的所有数据
-    async fetchHomeData() {
-      this.isLoading = true
-      try {
-        // 并行加载所有数据
-        const [banners, categories, jobs] = await Promise.all([
-          this.fetchBanners(),
-          this.fetchCategories(),
-          this.fetchJobsByTab(this.currentTab)
-        ])
-        
-        // 设置数据
-        if (banners) { this.banners = banners; this.preloadBannerImage() }
-        if (categories) this.categories = categories
-        if (jobs) {
-          switch (this.currentTab) {
-            case 'hot':
-              this.recommendJobs = jobs
-              break
-            case 'nearest':
-              this.nearestJobs = jobs
-              break
-            case 'latest':
-              this.latestJobs = jobs
-              break
-          }
-        }
-      } catch (error) {
-        console.error('获取首页数据失败', error)
-        uni.showToast({
-          title: '获取数据失败，请稍后再试',
-          icon: 'none'
-        })
-      } finally {
-        this.isLoading = false
-      }
-    },
-    
-    // 获取轮播图数据
-    async fetchBanners() {
-      try {
-        const response = await API.getBanners()
-        if (response && response.code === 0 && response && response.data) {
-          this.banners = response.data
-        } else {
-          this.banners = []
-        }
-      } catch (error) {
-        console.error('获取轮播图失败', error)
-        this.banners = []
-      }
-    },
-
-    
-    // 获取分类数据
-    async fetchCategories() {
-      try {
-        const response = await API.getCategories()
-        if (response && response.code === 0 && response && response.data) {
-          this.categories = response.data
-        } else {
-          this.categories = []
-        }
-      } catch (error) {
-        console.error('获取分类失败', error)
-        this.categories = []
-      }
-    },
-
-
-    onRegionChange(e) {
-      const picked = e.detail.value || []
-      this.region = picked
-      const raw = picked[1] || picked[0] || ''
-      this.city = String(raw).replace(/[省市]$/g, '')
-      this.recommendJobs = []
-      this.nearestJobs = []
-      this.latestJobs = []
-      this.currentPage = 1
-      this.hasMore = true
-      this.fetchHomeData()
-    },
-    goBlacklist() {
-      uni.navigateTo({ url: '/pages/blacklist/query' })
-    },
-    async loadPoints() {
-      try { const r = await API.getWallet(); this.points = r.data.points } catch (e) {}
-    },
-    async goWallet() {
-      uni.navigateTo({ url: '/pages/wallet/index' })
-    },
-
-    // 切换标签
-    async switchTab(tab) {
-      if (this.currentTab === tab) return
-      this.currentTab = tab
-      this.currentPage = 1
-      this.hasMore = true
-      
-      try {
-        const jobs = await this.fetchJobsByTab(tab)
-        switch (tab) {
-          case 'hot':
-            this.recommendJobs = jobs
-            break
-          case 'nearest':
-            this.nearestJobs = jobs
-            break
-          case 'latest':
-            this.latestJobs = jobs
-            break
-        }
-      } catch (error) {
-        console.error('切换标签失败', error)
-        uni.showToast({
-          title: '获取数据失败，请稍后再试',
-          icon: 'none'
-        })
-      }
-    },
-
-    // 轮播图点击事件
     bannerTap(item) {
-      const url = item.link || item.linkUrl
-      if (!url) return
-      uni.navigateTo({ url })
-    },
-
-    // 跳转到分类页面
-    goToCategory(category) {
-        uni.navigateTo({
-            url: `/pages/category/categoryJobs?id=${category.id}&name=${encodeURIComponent(category.name)}`
-        })
-    },
-
-    // 查看更多工作
-    gotoMoreJobs() {
-      uni.switchTab({ url: '/pages/jobSearch/jobSearch' })
-    },
-
-    // 跳转到搜索页
-    goToSearch() {
-      uni.navigateTo({
-        url: '/pages/jobSearch/jobSearch'
-      })
-    },
-
-    // 预加载轮播图第一张图片以获取高度
-    preloadBannerImage() {
-      const windowWidth = uni.getSystemInfoSync().windowWidth
-      const first = (this.banners && this.banners[0]) || null
-      const hasImage = !!(first && first.imageUrl)
-      // 有图按 516×145 原比例；无图走宣传卡，给足高度
-      const h = hasImage ? windowWidth * (145 / 516) : Math.round(windowWidth * 0.5)
-      this.bannerHeight = h + 'px'
-    },
-    
-    // 获取用户位置
-    getUserLocation() {
-      uni.getLocation({
-        type: 'gcj02',
-        success: (res) => {
-          this.location = {
-            latitude: res.latitude,
-            longitude: res.longitude
-          }
-          // 获取到位置后刷新附近的工作
-          this.fetchNearbyJobs()
-        },
-        fail: (err) => {
-          console.error('获取位置失败', err)
-          uni.showToast({
-            title: '获取位置失败，请检查定位权限',
-            icon: 'none'
-          })
-        }
-      })
-    },
-    
-    // 获取附近工作
-    async fetchNearbyJobs() {
-      if (!this.location) return
-      
-      try {
-        const params = {
-          latitude: this.location.latitude,
-          longitude: this.location.longitude,
-          limit: 5
-        }
-        const res = await API.getNearbyJobs(params)
-        const records = res && res.data && res.data.records ? res.data.records : []
-        if (records.length) this.nearestJobs = records
-      } catch (error) {
-        console.error('获取附近工作失败', error)
-      }
-    },
+      navigate(item.link)
+    }
   }
 }
 </script>
-
-<style lang="scss">
-.index-container {
-  min-height: 100vh;
-  background-color: #F6F7FB;
-  padding-bottom: 120rpx;
-  position: relative;
+<style scoped>
+.retry-more {
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--font-small);
+  line-height: 88rpx;
 }
-
-/* 标题样式 */
-.header-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #FFFFFF;
+.metadata-error {
+  padding: 16rpx;
+  margin-bottom: 24rpx;
+  border-radius: 16rpx;
+  background: #fff1e5;
+  color: #a45c17;
+  font-size: var(--font-small);
 }
-
-/* 搜索栏样式 */
-.search-box {
-  padding: 20rpx 30rpx;
-  background-color: #FFFFFF;
-  border-bottom: 1rpx solid rgba(0,0,0,0.05);
+.search-panel {
+  background: #fff;
+  padding: 12rpx 32rpx 0;
 }
-
-.search-bar {
+.search-row {
   display: flex;
   align-items: center;
-  
-  .location-btn {
-    display: flex;
-    align-items: center;
-    font-size: 28rpx;
-    margin-right: 15rpx;
-    color: #333;
-    font-weight: 500;
-    
-    .cuIcon-unfold {
-      font-size: 24rpx;
-      margin-left: 4rpx;
-    }
-  }
-  
-  .search-form {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    background-color: #F6F7FB;
-    height: 72rpx;
-    padding: 0 24rpx;
-    border-radius: 36rpx;
-    font-size: 28rpx;
-    
-    .cuIcon-search {
-      margin-right: 10rpx;
-      font-size: 32rpx;
-    }
-  }
-  
-  .quick-row { display: flex; padding: 0 30rpx 20rpx; }
-  .quick-chip { background: #fff; color: #1976d2; font-size: 24rpx; padding: 10rpx 24rpx; border-radius: 30rpx; margin-right: 16rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,.05); }
-  .search-btn {
-    width: 90rpx;
-    text-align: center;
-    color: #FFFFFF;
-    font-size: 28rpx;
-    background: linear-gradient(90deg, #6B7CFF, #8A5EFF);
-    height: 72rpx;
-    line-height: 72rpx;
-    border-radius: 36rpx;
-    margin-left: 15rpx;
-    font-weight: 500;
-  }
+  gap: 22rpx;
 }
-
-/* 轮播图样式 */
-.banner-wrapper {
-  width: 100%;
+.city {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  min-height: 80rpx;
+  font-size: var(--font-body);
+}
+.city text {
+  max-width: 110rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.search-input {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 12rpx;
+  background: #f2f4f7;
+  border-radius: 44rpx;
+  height: 44px;
+  padding: 0 22rpx;
+}
+.search-input input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-body);
+}
+.clear {
+  background: transparent;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  position: relative;
+  line-height: 44px;
+  min-width: 36px;
+  min-height: 44px;
 }
-
-.screen-swiper {
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0 4rpx;
+  gap: 10rpx;
+}
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  height: 88rpx;
+  min-height: 44px;
+  font-size: var(--font-body);
+  color: #566171;
+  white-space: nowrap;
+}
+.filter.active,
+.filter-reset {
+  color: var(--primary);
+}
+.filter-reset {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: 88rpx;
+}
+.banner-wrapper {
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.banner {
+  height: 270rpx;
+  min-height: 0;
+}
+.banner-image {
   width: 100%;
   height: 100%;
-  
-  .swiper-image {
-    width: 100%;
-    display: block;
-  }
 }
-
-/* 分类导航样式 */
-.category-section {
-  background-color: #FFFFFF;
-  padding: 20rpx 0 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.03);
-}
-
-.category-grid {
+.banner-fallback {
+  height: 100%;
+  background: #2563eb;
+  color: #fff;
+  padding: 40rpx;
   display: flex;
-  flex-wrap: wrap;
-  padding: 10rpx 20rpx;
-}
-
-.category-item {
-  width: 20%;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 15rpx 0;
-  
-  .icon-wrapper {
-    width: 88rpx;
-    height: 88rpx;
-    background: #EAF3FF;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    
-    .category-initial {
-      font-size: 34rpx;
-      color: #1976d2;
-      font-weight: 700;
-      line-height: 1;
-    }
-.category-icon {
-      width: 60rpx;
-      height: 60rpx;
-    }
-  }
-  
-  .category-name {
-    font-size: 24rpx;
-    color: #333333;
-    font-weight: 500;
-    margin-bottom: 4rpx;
-  }
-
-  .category-desc {
-    font-size: 20rpx;
-    color: #999999;
-    width: 100%;
-    text-align: center;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    text-align: center;
-    padding: 0 10rpx;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.3;
-  }
-
-  &:active {
-    .icon-wrapper {
-      transform: scale(0.95);
-      box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.1);
-    }
-  }
+  justify-content: space-between;
+  gap: 20rpx;
 }
-
-/* 推广横幅样式 */
-.promo-banner {
-  margin: 0 0 20rpx 0;
-  width: 100%;
-  
-  image {
-    width: 100%;
-    display: block;
-  }
+.banner-fallback text {
+  max-width: 65%;
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.5;
 }
-
-/* 分隔线 */
-.section-divider {
-  height: 20rpx;
-  background-color: #F6F7FB;
-}
-
-/* 推荐岗位区域样式 */
-.recommend-section {
-  background-color: #FFFFFF;
-  margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.03);
-}
-
-.recommend-tabs {
+.quick-grid {
   display: flex;
   justify-content: space-around;
-  background-color: #FFFFFF;
-  padding: 0;
-  border-bottom: 1rpx solid rgba(0,0,0,0.05);
-  overflow: hidden;
-  
-  .tab-item {
-    flex: 1;
-    text-align: center;
-    padding: 25rpx 0;
-    font-size: 30rpx;
-    color: #666666;
-    position: relative;
-    
-    &.active {
-      color: #6B7CFF;
-      font-weight: 600;
-      
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 30%;
-        width: 40%;
-        height: 6rpx;
-        border-radius: 3rpx;
-        background: linear-gradient(90deg, #6B7CFF, #8A5EFF);
-      }
-    }
+  gap: 8rpx;
+  padding: 20rpx 0 32rpx;
+}
+.quick-item {
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-direction: column;
+  padding: 8rpx 0;
+  font-size: var(--font-small);
+  line-height: 1.5;
+  margin: 0;
+}
+.quick-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  transition:
+    transform 160ms var(--ease-out),
+    box-shadow 160ms ease;
+}
+.quick-pressed .quick-icon {
+  transform: scale(0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-icon {
+    transition: none;
+  }
+  .quick-pressed .quick-icon {
+    transform: none;
   }
 }
-
-.job-list-container {
-  background-color: #FFFFFF;
-  padding: 20rpx 30rpx;
+.home :deep(.auth-gate) {
+  margin: 16rpx 0 0;
 }
-
-.job-list {
+.chosen .quick-icon {
+  box-shadow:
+    0 0 0 4rpx #fff,
+    0 0 0 7rpx #2563eb;
+}
+.chosen text {
+  color: var(--primary);
+}
+.result-label {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 18rpx;
+  font-size: var(--font-caption);
+  color: var(--muted);
+  padding-bottom: 24rpx;
 }
-
-.more-jobs {
-  text-align: center;
-  padding: 20rpx 0;
-  font-size: 28rpx;
-  color: #6B7CFF;
-  border-top: 1rpx solid rgba(0,0,0,0.05);
-  margin-top: 20rpx;
-}
-
-/* 布局覆盖：分类四列、快捷入口不与轮播重叠 */
-.category-grid { justify-content: flex-start; }
-.category-item { width: 25% !important; margin-bottom: 24rpx; }
-.category-item .icon-wrapper { width: 88rpx; height: 88rpx; background: #EAF3FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10rpx; }
-.category-item .category-name { font-size: 26rpx; color: #333; }
-.quick-row { position: relative; z-index: 3; background: #F5F5F5; padding: 12rpx 24rpx 16rpx; display: flex; }
-.banner-wrapper { margin-top: 8rpx; }
-.swiper-image { width: 100%; height: 100%; }
-.promo-card { width: 100%; height: 100%; background: linear-gradient(135deg, #1b4b7a 0%, #2a6aa8 60%, #3d8fd0 100%); display: flex; flex-direction: column; justify-content: center; padding: 0 48rpx; box-sizing: border-box; }
-.promo-title { color: #fff; font-size: 44rpx; font-weight: 700; letter-spacing: 2rpx; }
-.promo-sub { color: rgba(255,255,255,.85); font-size: 26rpx; margin-top: 12rpx; }
-.promo-tag { color: #ffd08a; font-size: 24rpx; margin-top: 18rpx; }
-</style> 
+</style>
