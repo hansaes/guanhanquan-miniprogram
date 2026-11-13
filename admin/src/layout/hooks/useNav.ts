@@ -37,7 +37,7 @@ export function useNav() {
     };
   });
 
-  /** 头像（如果头像为空则使用 src/assets/user.jpg ） */
+  /** 头像为空时使用统一管理员占位图。 */
   const userAvatar = computed(() => {
     return isAllEmpty(useUserStoreHook()?.avatar)
       ? Avatar

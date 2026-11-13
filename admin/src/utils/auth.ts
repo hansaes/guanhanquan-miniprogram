@@ -1,5 +1,5 @@
 import { useUserStoreHook } from "@/store/modules/user";
-import { storageLocal, isString, isIncludeAllChildren } from "@pureadmin/utils";
+import { storageLocal } from "@pureadmin/utils";
 import { clearAdminSession, sessionTokenKey, sessionUserKey } from "./admin-session";
 
 export interface DataInfo<T> {
@@ -31,9 +31,3 @@ export function setToken(data: DataInfo<Date>) {
   user.SET_PERMS(data.permissions ?? []);
 }
 export const removeToken = clearAdminSession;
-export const formatToken = (token: string) => `Bearer ${token}`;
-export const hasPerms = (value: string | string[]): boolean => {
-  const { permissions } = useUserStoreHook();
-  if (!value || !permissions) return false;
-  return isString(value) ? permissions.includes(value) : isIncludeAllChildren(value, permissions);
-};

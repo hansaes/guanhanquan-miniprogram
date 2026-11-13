@@ -17,6 +17,8 @@
 
 构建插件启用 Vue、JSX、Tailwind、SVG 和离线图标；应用运行数据来自 /api。包管理改为 pnpm，增加直接引用的 tippy.js 依赖；启动与构建命令兼容 PowerShell。
 
+按当前业务使用情况裁剪了通用表格封装、全局弹窗、按钮权限组件、打印与缓存工具，以及未启用的构建插件和对应依赖。业务使用 Element Plus 表格与弹窗，路由权限过滤和服务端鉴权继续由现有实现负责。
+
 ## 选型记录
 
 比较了 Pure-Admin、Geeker-Admin 和 Vben Admin。选择 Pure-Admin 官方精简版，是因为它与现有 Vue 3 / Element Plus 页面一致，具有完整的后台交互框架，适合接入本仓库已有的 PostgreSQL 业务 API。

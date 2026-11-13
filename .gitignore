@@ -37,3 +37,6 @@ Thumbs.db
 .playwright-cli/
 server/uploads/
 output/
+admin/shots/
+e2e/shots/
+reports/

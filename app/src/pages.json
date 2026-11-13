@@ -128,18 +128,6 @@
       }
     },
     {
-      "path": "pages/employer/jobs/detail",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/employer/jobs/list",
-      "style": {
-        "navigationBarTitleText": ""
-      }
-    },
-    {
       "path": "pages/blacklist/query",
       "style": {
         "navigationStyle": "custom",

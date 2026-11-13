@@ -4,7 +4,7 @@
 
 ## PostgreSQL 后端与运营管理
 
-新增 `server/` 独立后端，在 [Fastify 官方脚手架](https://github.com/fastify/fastify-cli) 上二次开发，使用 PostgreSQL 17 的 24 张业务表，接通现有小程序接口与 Element Plus 后台。支持工种、页面内容、培训、保险、费用配置以及招工、简历、认证、举报和申诉审核，管理写入记录操作日志。
+`server/` 为独立后端，在 [Fastify 官方脚手架](https://github.com/fastify/fastify-cli) 上二次开发，使用 PostgreSQL 17 的 24 张业务表，接通小程序接口与 Element Plus 后台。支持工种、页面内容、培训、保险、费用配置以及招工、简历、认证、举报和申诉审核，管理写入记录操作日志。
 
 启动、数据模型、接口覆盖与微信配置见 **[PostgreSQL 后端设计与接入](docs/PostgreSQL后端设计与接入.md)**。后端来源与许可见 [server/THIRD_PARTY_NOTICES.md](server/THIRD_PARTY_NOTICES.md)。
 
@@ -15,17 +15,17 @@
 ```
 app/                小程序端（uni-app 3 + Vue 3 + Vite）
   src/api/          接口层：PostgreSQL HTTP / 微信云函数 / 内存演示
-  src/pages/        33 个已注册页面
+  src/pages/        首页、发布、个人中心及业务页面
   src/store/        Vuex 4
 cloudfunctions/
-  api/              单入口云函数，91 条路由
-    handlers/       auth jobs workers applications categories social wallet blacklist admin
+  api/              HTTP 服务与云函数共用的业务接口
+    handlers/       登录、岗位、简历、报名、钱包、内容及管理接口
     test/           内存数据库 + 124 项业务验收
   pay-notify/       微信支付回调
 admin/              Pure-Admin 运营后台（Vue 3 + TypeScript + Pinia + Element Plus）
 server/             Fastify + PostgreSQL 独立服务、迁移、微信网关与集成测试
 scripts/dev-api.cjs 本地 API 服务（无需云环境即可联调）
-docs/               交付验收与闭环报告（唯一文档）
+docs/               UI 规范、验收记录、后端接入与架构决策
 ```
 
 ## 内存演示（没有 AppID 也能跑）
@@ -53,31 +53,41 @@ pnpm dev                       # http://127.0.0.1:5186，代理到 3001 API
 
 ## 业务验收
 
-```bash
-cd cloudfunctions/api && node test/run.js
+```powershell
+# 从仓库根目录执行
+node --test app/scripts/test-*.cjs
+node cloudfunctions/api/test/run.js
+node cloudfunctions/api/test/content.test.js
+node cloudfunctions/api/test/regions.test.js
+node cloudfunctions/api/test/profile-form.test.js
+node cloudfunctions/api/test/management.test.js
 ```
 
-当前 124 项通过 0 失败。
+后端 PostgreSQL 集成测试在隔离 schema 中运行，需要先配置 `TEST_DATABASE_URL`，执行方式见 [后端接入文档](docs/PostgreSQL后端设计与接入.md)。
 
-小程序 E2E：
+编译检查：
 
-```bash
-cli.bat auto --project <仓库根目录> --auto-port 9420
-cd e2e && node ui.cjs       # 16 项
-cd e2e && node closure.cjs  # 19 项
+```powershell
+Set-Location app
+npm run build:mp-weixin
+npm run build:h5
+Set-Location ../admin
+pnpm typecheck
+pnpm build
 ```
 
-## 交付状态
+微信原生登录、头像昵称、拨号与支付仍需微信开发者工具和真机验证。界面验收步骤与已验证范围见 [UI验收记录](docs/UI验收记录.md)，临时截图统一存放在 Git 忽略的 `output/`。
 
-代码闭环完成：PDF 3.x 的 77 项功能点中 75 项闭环、2 项为明确产品取舍、0 项缺失。真实微信支付、真机绑手机、云环境部署仍需外部凭证。
+## 文档入口
 
-逐项需求矩阵、修复对账、验证证据、部署步骤、剩余风险与二期 B1–B10 交接见：
-
-**[docs/交付验收与缺口总表.md](docs/交付验收与缺口总表.md)**
+- [UI设计规范](docs/UI设计规范.md)：组件、导航、交互和后台内容契约。
+- [UI验收记录](docs/UI验收记录.md)：本次改版的测试、截图和微信端待验证项。
+- [PostgreSQL后端设计与接入](docs/PostgreSQL后端设计与接入.md)：服务启动、迁移、微信配置和部署。
+- [原始需求与历史验收基线](docs/交付验收与缺口总表.md)：2026-11-11 的需求矩阵与交接背景。
 
 ## 云开发部署
 
-见交付报告第七章：填 AppID 与云环境 ID → 建集合与索引 → 部署两个云函数 → 配置环境变量 → 绑定微信支付。
+云函数部署路径继续保留。当前 HTTP 服务的部署配置以 [后端接入文档](docs/PostgreSQL后端设计与接入.md) 为准。
 
 ## 许可
 

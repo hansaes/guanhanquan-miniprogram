@@ -2,8 +2,8 @@
  * 本地联调用的 API 服务：直接跑 cloudfunctions 里的同一套 handler + 内存数据库。
  * 用途：没有 AppID / 云环境时，让小程序在开发者工具里也能走完整的真实逻辑。
  *
- *   node scripts/dev-api.js            # 默认 3001 端口
- *   GHQ_DEV_SEED=0 node scripts/dev-api.js
+ *   node scripts/dev-api.cjs            # 默认 3001 端口
+ *   GHQ_DEV_SEED=0 node scripts/dev-api.cjs
  */
 process.env.ADMIN_INIT_PASSWORD = process.env.ADMIN_INIT_PASSWORD || 'dev-admin-pass'
 process.env.PAY_SUB_MCH_ID = process.env.PAY_SUB_MCH_ID || 'dev-mch'

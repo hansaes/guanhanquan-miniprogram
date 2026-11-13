@@ -31,9 +31,9 @@
       
       <!-- 图片上传 -->
       <view class="upload-area">
-        <view class="upload-box" @click="chooseImage">
-          <image src="/static/img/icons/camera.png" mode="aspectFit"></image>
-        </view>
+        <button class="upload-box" aria-label="添加反馈图片" @click="chooseImage">
+          <uni-icons type="camera" size="30" color="#929baa" />
+        </button>
         <view class="upload-preview" v-for="(item, index) in images" :key="index">
           <image :src="item" mode="aspectFill"></image>
           <view class="delete-btn" @click="deleteImage(index)">×</view>
@@ -233,10 +233,16 @@ export default {
         align-items: center;
         justify-content: center;
         position: relative;
-        
-        image {
-          width: 60rpx;
-          height: 60rpx;
+      }
+
+      .upload-box {
+        margin-left: 0;
+        padding: 0;
+        line-height: 1;
+        background: transparent;
+
+        &::after {
+          border: none;
         }
       }
       
@@ -331,4 +337,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

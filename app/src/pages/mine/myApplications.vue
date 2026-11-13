@@ -65,7 +65,7 @@
     
     <!-- 空状态 -->
     <view class="empty-state" v-else>
-      <image src="/static/img/empty.png" mode="aspectFit"></image>
+      <image src="/static/img/icons/empty.png" mode="aspectFit"></image>
       <text>暂无申请记录</text>
     </view>
     
@@ -429,4 +429,4 @@ export default {
   color: var(--muted);
   font-size: var(--font-body);
 }
-</style> 
+</style>
