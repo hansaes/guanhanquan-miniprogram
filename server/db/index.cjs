@@ -3,6 +3,7 @@
 const { AsyncLocalStorage } = require('node:async_hooks')
 const { randomUUID } = require('node:crypto')
 const { schema, enterpriseFields } = require('./schema.cjs')
+const { LEGACY_WRITE_LOCK } = require('./transaction-lock.cjs')
 
 const OP = Symbol('databaseCommand')
 function operation(kind, value) {
@@ -141,7 +142,7 @@ function createDatabase(pool) {
   let sequence = 0
   async function lock(state) {
     if (!state.root.locked) {
-      await state.client.query('SELECT pg_advisory_xact_lock($1::bigint)', ['643276150102901'])
+      await state.client.query('SELECT pg_advisory_xact_lock($1::bigint)', [LEGACY_WRITE_LOCK])
       state.root.locked = true
     }
   }

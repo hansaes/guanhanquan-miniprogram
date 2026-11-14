@@ -1,0 +1,43 @@
+{
+  "reviewJob": {
+    "type": "object", "additionalProperties": false,
+    "required": ["pass", "expectedVersion"],
+    "properties": {
+      "pass": { "type": "boolean" },
+      "expectedVersion": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+      "reason": { "type": "string", "maxLength": 500 }
+    },
+    "if": { "properties": { "pass": { "const": false } } },
+    "then": { "required": ["reason"], "properties": { "reason": { "type": "string", "pattern": "\\S" } } }
+  },
+  "paidCommand": {
+    "type": "object", "additionalProperties": false,
+    "required": ["idempotencyKey"],
+    "properties": {
+      "idempotencyKey": { "type": "string", "minLength": 16, "maxLength": 128, "pattern": "^[A-Za-z0-9_-]+$" }
+    }
+  },
+  "applyJob": {
+    "type": "object", "additionalProperties": false,
+    "properties": { "coverLetter": { "type": "string", "maxLength": 2000 } }
+  },
+  "empty": { "type": "object", "additionalProperties": false },
+  "idParams": {
+    "type": "object", "required": ["id"],
+    "properties": { "id": { "type": "string", "minLength": 1, "maxLength": 128 } }
+  },
+  "applicationParams": {
+    "type": "object", "required": ["jobId", "appId"],
+    "properties": {
+      "jobId": { "type": "string", "minLength": 1, "maxLength": 128 },
+      "appId": { "type": "string", "minLength": 1, "maxLength": 128 }
+    }
+  },
+  "pagination": {
+    "type": "object", "additionalProperties": false,
+    "properties": {
+      "page": { "type": "string", "pattern": "^[1-9][0-9]{0,6}$" },
+      "pageSize": { "type": "string", "pattern": "^([1-9]|[1-4][0-9]|50)$" }
+    }
+  }
+}

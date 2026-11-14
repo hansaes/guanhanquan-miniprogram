@@ -3,19 +3,30 @@
   "version": "1.0.0",
   "private": true,
   "description": "管焊圈 PostgreSQL API",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env index.cjs",
     "dev": "node --env-file-if-exists=.env --watch index.cjs",
     "migrate": "node --env-file-if-exists=.env scripts/migrate.cjs",
-    "test": "node --test --test-concurrency=1 test/*.test.cjs"
+    "test": "node --test --test-concurrency=1 test/*.test.cjs",
+    "typecheck": "tsc --noEmit -p tsconfig.architecture.json",
+    "contracts": "node scripts/generate-contracts.cjs"
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",
     "@fastify/cors": "^11.4.2",
     "@fastify/multipart": "^10.1.8",
     "@fastify/rate-limit": "^11.2.2",
+    "ajv": "^8.20.0",
     "fastify": "^5.12.8",
     "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/pg": "^8.23.1",
+    "json-schema-to-typescript": "15.0.4",
+    "typescript": "5.9.3"
   }
 }

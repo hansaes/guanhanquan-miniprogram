@@ -16,6 +16,8 @@
 
 ## Transactions
 
+Architecture v1 adds `jobs.version`, `job_reviews` and durable `command_receipts` through `002_architecture_v1.sql`. Migrated commands use explicit application transactions with the same shared write lock as legacy handlers. The finance report alone uses a repeatable-read, read-only transaction without that lock. See [the v1 rollout and compatibility notes](../../docs/架构优化第一版.md).
+
 Wrap complete business requests in `db.runInTransaction(async () => ...)`. The callback's return value is passed through; `{ success: false }` rolls back, as does a thrown error. The callback optionally receives a transaction-bound database. A manual `db.startTransaction()` provides `collection`, `commit` and `rollback`; nesting uses savepoints. A swallowed SQL error cannot produce a successful commit response.
 
 The default `{ write: true }` acquires a database-wide transaction advisory lock **before** any business reads. This intentionally serializes existing read/check/update workflows, including profile rewards and payments, until they can be migrated individually to row locks or fully atomic SQL. All current legacy API routes should use this default because some GET handlers update counters or expire jobs. `{ write: false }` is available for genuinely read-only callers; a later mutation acquires the same lock but cannot protect reads performed before that upgrade.

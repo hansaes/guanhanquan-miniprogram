@@ -20,7 +20,7 @@ const schema = {
   jobs: table('jobs', {
     text: 'title jobType workArea workAddress duration certificateReq ageLimit techReq otherReq otherBenefits contactName contactPhoneEnc employerName employerAvatar rejectReason',
     reference: 'ownerOpenid categoryId', number: 'salary latitude longitude',
-    integer: 'salaryUnit payType accommodation travelReimburse workerCount genderLimit status viewCount applyCount',
+    integer: 'salaryUnit payType accommodation travelReimburse workerCount genderLimit status viewCount applyCount version',
     boolean: 'wechatSame isUrgent isTop requestTop employerVerified', timestamp: 'priorityAt expireAt topExpireAt'
   }),
   resumes: table('resumes', {

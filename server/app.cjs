@@ -3,6 +3,7 @@
 // Adapted from fastify/fastify-cli templates/app/app.js; see THIRD_PARTY_NOTICES.md.
 const path = require('node:path')
 const AutoLoad = require('@fastify/autoload')
+const { ApplicationError } = require('./application/errors.cjs')
 
 module.exports = async function (fastify, opts) {
   await fastify.register(require('@fastify/cors'), {
@@ -24,8 +25,10 @@ module.exports = async function (fastify, opts) {
   })
   fastify.setErrorHandler((error, req, reply) => {
     const status = error.statusCode >= 400 && error.statusCode < 600 ? error.statusCode : 500
-    if (status >= 500) req.log.error({ err: { name: error.name, code: error.code } }, 'request failed')
-    reply.code(status).send({ success: false, code: status, message: status >= 500 ? '服务暂不可用，请稍后重试' : error.message, data: null })
+    if (status >= 500) req.log.error({ err: { name: error.name, code: error.code, stack: error.stack?.split('\n').slice(1).join('\n') } }, 'request failed')
+    const errorCode = error instanceof ApplicationError ? error.code : error.validation ? 'VALIDATION_ERROR' : status >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR'
+    const message = error.validation ? '请求参数格式不正确，请刷新页面或更新客户端后重试' : status >= 500 ? '服务暂不可用，请稍后重试' : error.message
+    reply.code(status).send({ success: false, code: status, errorCode, message, data: null, requestId: req.id })
   })
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),

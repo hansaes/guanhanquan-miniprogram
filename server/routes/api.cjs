@@ -3,8 +3,10 @@ const { ROUTES, handle } = require('../../cloudfunctions/api/router')
 const { identity, userToken, equalSecret } = require('../security.cjs')
 const files = require('../files.cjs')
 const { settlePayment, createRecharge } = require('../payment.cjs')
+const { registerArchitectureRoutes } = require('../interfaces/architecture.cjs')
 
 module.exports = async function (app, { config, db, pool, wechat }) {
+  const migratedRoutes = registerArchitectureRoutes(app, { config, db, pool })
   app.get('/health', async () => { await pool.query('SELECT 1'); return { status: 'ok', database: 'postgresql' } })
 
   app.post('/api/auth/dev-login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req, reply) => {
@@ -36,6 +38,7 @@ module.exports = async function (app, { config, db, pool, wechat }) {
   app.get('/api/files/:id', (req, reply) => files.download(req, reply, db, config))
 
   for (const [method, routePath, handler, policy] of ROUTES) {
+    if (migratedRoutes.has(`${method} ${routePath}`)) continue
     app.route({
       method, url: '/api' + routePath,
       config: routePath.endsWith('/login') ? { rateLimit: { max: 10, timeWindow: '1 minute' } } : {},
