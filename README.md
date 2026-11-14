@@ -10,6 +10,8 @@
 
 管理后台基于 [Pure-Admin 官方应用精简版](https://github.com/pure-admin/pure-admin-thin) 二次开发，使用其完整布局、多标签页、菜单搜索和主题系统，接入 18 个业务页面。启动说明见 [admin/README.md](admin/README.md)，固定上游提交及 MIT 许可见 [admin/THIRD_PARTY_NOTICES.md](admin/THIRD_PARTY_NOTICES.md)。
 
+架构优化第一版已将 PostgreSQL 的岗位审核/报名、保险购买、岗位推广和财务汇总迁入独立用例模块。收费请求需要幂等键，岗位审核需要版本号；部署时需配套更新客户端，详见 [架构优化第一版](docs/架构优化第一版.md)。
+
 ## 结构
 
 ```
