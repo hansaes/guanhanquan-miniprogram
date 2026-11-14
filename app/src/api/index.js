@@ -1,7 +1,8 @@
 import { callApi, uploadToCloud } from './cloud'
+import { paidCommand } from './paid-command.js'
 
 const get = (url, data) => callApi(url, 'GET', data)
-const post = (url, data) => callApi(url, 'POST', data)
+const post = (url, data = {}) => callApi(url, 'POST', data)
 const put = (url, data) => callApi(url, 'PUT', data)
 const del = (url, data) => callApi(url, 'DELETE', data)
 
@@ -27,8 +28,8 @@ export default {
   updateJob: (jobId, data) => put(`/jobs/update/${jobId}`, data),
   deleteJob: (jobId) => del(`/jobs/delete/${jobId}`),
   setJobStatus: (jobId, status) => post(`/jobs/status/${jobId}`, { status }),
-  topJob: (jobId) => post(`/jobs/top/${jobId}`),
-  refreshJob: (jobId) => post(`/jobs/refresh/${jobId}`),
+  topJob: (jobId) => paidCommand(`/jobs/top/${encodeURIComponent(jobId)}`),
+  refreshJob: (jobId) => paidCommand(`/jobs/refresh/${encodeURIComponent(jobId)}`),
   getApplicantsForJob: (jobId) => get(`/jobs/applicants/list/${jobId}`),
   acceptJobApplicant: (jobId, applicantId) =>
     post(`/jobs/applicants/accept/${jobId}/${applicantId}`),
@@ -80,7 +81,7 @@ export default {
 
   // 保险
   getInsuranceList: () => get('/insurances/list'),
-  buyInsurance: (id, data) => post(`/insurances/purchase/${id}`, data),
+  buyInsurance: (id, data) => paidCommand(`/insurances/purchase/${encodeURIComponent(id)}`, data),
   getUserInsurances: () => get('/users/insurances/list'),
 
   // 培训

@@ -17,7 +17,7 @@
         </view>
         <view class="coverage">{{ item.coverage }}</view>
         <view class="intro">{{ item.intro }}</view>
-        <button role="button" class="buy" @tap="buy(item)">购买</button>
+        <button role="button" class="buy" :disabled="!!buyingId" :loading="buyingId === item.id" @tap="buy(item)">购买</button>
       </view>
       <view v-if="!products.length && !loading" class="empty">暂无可购买的保险</view>
     </view>
@@ -44,7 +44,8 @@ export default {
       tab: 'buy',
       products: [],
       policies: [],
-      loading: false
+      loading: false,
+      buyingId: ''
     }
   },
   onLoad() {
@@ -76,19 +77,24 @@ export default {
       }
     },
     async buy(item) {
+      if (this.buyingId) return
+      this.buyingId = item.id
       uni.showModal({
         title: '确认购买',
         content: `将扣除余额 ¥${item.price}`,
         success: async (r) => {
-          if (!r.confirm) return
+          if (!r.confirm) { this.buyingId = ''; return }
           try {
             await api.buyInsurance(item.id, {})
             uni.showToast({ title: '购买成功', icon: 'success' })
             this.switchMine()
           } catch (e) {
             // 余额不足等提示由请求层给出
+          } finally {
+            this.buyingId = ''
           }
-        }
+        },
+        fail: () => { this.buyingId = '' }
       })
     }
   }
