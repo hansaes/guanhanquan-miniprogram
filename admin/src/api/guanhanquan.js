@@ -3,6 +3,14 @@ import { sessionTokenKey, expireAdminSession } from '@/utils/admin-session'
 
 const http = axios.create({ baseURL: import.meta.env.VITE_API_BASE || '/api', timeout: 15000 })
 
+function apiError(body, fallback) {
+  return Object.assign(new Error(body?.message || fallback || '请求失败'), {
+    code: Number(body?.code) || 0,
+    errorCode: body?.errorCode || '',
+    requestId: body?.requestId || ''
+  })
+}
+
 http.interceptors.request.use((cfg) => {
   const token = localStorage.getItem(sessionTokenKey)
   if (token && cfg.url !== '/admin/login') cfg.headers.Authorization = 'Bearer ' + token
@@ -14,7 +22,7 @@ http.interceptors.response.use(
     const body = res.data
     if (!body || body.success !== true) {
       if (Number(body?.code) === 401 && res.config?.url !== '/admin/login') expireAdminSession()
-      return Promise.reject(new Error((body && body.message) || '请求失败'))
+      return Promise.reject(apiError(body))
     }
     return body.data
   },
@@ -22,7 +30,7 @@ http.interceptors.response.use(
     if (err.response && err.response.status === 401 && err.config?.url !== '/admin/login') {
       expireAdminSession()
     }
-    return Promise.reject(new Error(err.response?.data?.message || err.message || '网络异常'))
+    return Promise.reject(apiError(err.response?.data, err.message || '网络异常'))
   }
 )
 
@@ -45,7 +53,8 @@ export const api = {
   overview: () => http.get('/admin/overview'),
 
   jobs: (params) => http.get('/admin/jobs', { params }),
-  reviewJob: (id, data) => http.post(`/admin/jobs/${id}/review`, data),
+  /** @param {string} id @param {import('../../../contracts/architecture-v1').ReviewJobInput} data */
+  reviewJob: (id, data) => http.post(`/admin/jobs/${encodeURIComponent(id)}/review`, data),
 
   users: (params) => http.get('/admin/users', { params }),
   userDetail: (id) => http.get(`/admin/users/${id}`),

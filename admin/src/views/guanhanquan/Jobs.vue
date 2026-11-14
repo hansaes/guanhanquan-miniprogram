@@ -34,8 +34,8 @@
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <template v-if="row.status === 0">
-            <el-button size="small" type="success" @click="review(row, true)">通过</el-button>
-            <el-button size="small" type="danger" @click="askReject(row)">驳回</el-button>
+            <el-button size="small" type="success" :loading="reviewingId === row.id" :disabled="!!reviewingId" @click="review(row, true)">通过</el-button>
+            <el-button size="small" type="danger" :disabled="!!reviewingId" @click="askReject(row)">驳回</el-button>
           </template>
           <span v-else-if="row.status === 4" class="reason">{{ row.rejectReason || '已驳回' }}</span>
         </template>
@@ -51,34 +51,37 @@
       @current-change="load"
     />
 
-    <el-dialog v-model="rejectVisible" title="驳回原因" width="420px">
+    <el-dialog v-model="rejectVisible" title="驳回原因" width="420px" :close-on-click-modal="!reviewingId" :close-on-press-escape="!reviewingId" :show-close="!reviewingId">
       <el-input v-model="rejectReason" type="textarea" :rows="4" placeholder="填写驳回原因，会通知发布者" />
       <template #footer>
-        <el-button @click="rejectVisible = false">取消</el-button>
-        <el-button type="danger" @click="confirmReject">确认驳回</el-button>
+        <el-button :disabled="!!reviewingId" @click="rejectVisible = false">取消</el-button>
+        <el-button type="danger" :loading="!!reviewingId" @click="confirmReject">确认驳回</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
-<script setup>
-import { reactive, ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { reactive, ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '@/api/guanhanquan'
+import type { ReviewableJob, ReviewJobInput } from '../../../../contracts/architecture-v1'
 
-const rows = ref([])
+const rows = ref<ReviewableJob[]>([])
 const total = ref(0)
 const loading = ref(false)
 const query = reactive({ status: 0, keyword: '', page: 1, pageSize: 20 })
 const rejectVisible = ref(false)
 const rejectReason = ref('')
-const current = ref(null)
+const current = ref<ReviewableJob | null>(null)
+const reviewingId = ref('')
+let sequence = 0
 
-const statusText = (s) => ({ 0: '待审核', 1: '已通过', 2: '已下架', 3: '已过期', 4: '已驳回', 5: '已删除' }[s] || '未知')
-const statusType = (s) => ({ 0: 'warning', 1: 'success', 2: 'info', 3: 'info', 4: 'danger', 5: 'info' }[s] || 'info')
-const fmt = (ts) => (ts ? new Date(ts).toLocaleString('zh-CN') : '-')
+const statusText = (s: number) => ({ 0: '待审核', 1: '已通过', 2: '已下架', 3: '已过期', 4: '已驳回', 5: '已删除' }[s] || '未知')
+const statusType = (s: number): 'warning' | 'success' | 'info' | 'danger' => ({ 0: 'warning', 1: 'success', 2: 'info', 3: 'info', 4: 'danger', 5: 'info' } as const)[s] || 'info'
+const fmt = (ts: number) => (ts ? new Date(ts).toLocaleString('zh-CN') : '-')
 const UNITS = { 1: '元/天', 2: '元/小时', 3: '元/月', 4: '面议' }
-function salaryText(row) {
+function salaryText(row: ReviewableJob) {
   if (!row) return ''
   const unit = Number(row.salaryUnit || 1)
   if (unit === 4) return '面议'
@@ -86,50 +89,59 @@ function salaryText(row) {
 }
 
 async function load() {
+  const request = ++sequence
   loading.value = true
   try {
     const data = await api.jobs(query)
+    if (request !== sequence) return
     rows.value = data.records
     total.value = data.total
   } catch (e) {
-    ElMessage.error(e.message)
+    if (request === sequence) ElMessage.error(e instanceof Error ? e.message : '加载失败')
   } finally {
-    loading.value = false
+    if (request === sequence) loading.value = false
   }
 }
 
-async function review(row, pass) {
+async function review(row: ReviewableJob, pass: boolean, reason = '') {
+  if (reviewingId.value) return
+  reviewingId.value = row.id
   try {
-    await api.reviewJob(row.id, { pass })
+    const input: ReviewJobInput = { pass, expectedVersion: row.version, ...(pass ? {} : { reason: reason.trim() }) }
+    await api.reviewJob(row.id, input)
     ElMessage.success(pass ? '已通过' : '已驳回')
-    load()
+    rejectVisible.value = false
+    await load()
   } catch (e) {
-    ElMessage.error(e.message)
+    ElMessage.error(e instanceof Error ? e.message : '审核失败')
+    if (Number((e as { code?: number })?.code) === 409) {
+      rejectVisible.value = false
+      current.value = null
+      await load()
+    }
+  } finally {
+    reviewingId.value = ''
   }
 }
 
-function askReject(row) {
-  current.value = row
+function askReject(row: ReviewableJob) {
+  if (reviewingId.value) return
+  current.value = { ...row }
   rejectReason.value = ''
   rejectVisible.value = true
 }
 
 async function confirmReject() {
+  if (!current.value || reviewingId.value) return
   if (!rejectReason.value.trim()) {
     ElMessage.warning('请填写驳回原因')
     return
   }
-  try {
-    await api.reviewJob(current.value.id, { pass: false, reason: rejectReason.value })
-    rejectVisible.value = false
-    ElMessage.success('已驳回')
-    load()
-  } catch (e) {
-    ElMessage.error(e.message)
-  }
+  await review(current.value, false, rejectReason.value)
 }
 
 onMounted(load)
+onBeforeUnmount(() => { sequence++ })
 </script>
 
 <style scoped>

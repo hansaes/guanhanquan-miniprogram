@@ -182,7 +182,7 @@ exports.jobs = async (ctx) => {
     id: j._id, title: j.title, salary: j.salary, salaryUnit: j.salaryUnit || 1,
     workArea: j.workArea, contactName: j.contactName, status: j.status,
     rejectReason: j.rejectReason || '', ownerOpenid: j.ownerOpenid,
-    createdAt: j.createdAt, expireAt: j.expireAt || 0
+    createdAt: j.createdAt, expireAt: j.expireAt || 0, version: j.version || 1
   })), total, page, pageSize))
 }
 
